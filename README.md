@@ -1,5 +1,6 @@
-#  #30DayChartChallenge
-A collection of data visualizations created for the [#30DayChartChallenge](https://github.com/30DayChartChallenge). Mixing insight with aesthetics, caffeine optional but recommended.
+![cover](cover.jpg)
+
+My submissions for the [#30DayChartChallenge](https://github.com/30DayChartChallenge). Mixing insight with aesthetics, caffeine optional but recommended.
 
 ## 2025 Edition 
 
