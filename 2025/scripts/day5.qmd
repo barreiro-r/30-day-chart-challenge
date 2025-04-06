@@ -1,0 +1,213 @@
+---
+title: "Breast Cancer Wisconsin"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(ggbump)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 14, face = 'bold'),
+    plot.subtitle = element_text(size = 10,lineheight = 1.25, margin = margin(0,0,20,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 9),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8),
+    axis.text = element_markdown(family = "Chakra Petch", hjust = .5, size = 8, color = "#474747"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+
+)
+```
+
+```{r load_data}
+raw_data <- 
+  read_csv('2025/datasets/cause-of-deaths-around-the-world.csv')
+
+name_dict <- names(raw_data)
+names(name_dict) <- names(raw_data |> janitor::clean_names())
+
+data2plot <- 
+  raw_data |>
+  janitor::clean_names() |>
+  select(country_territory, malaria, year) |>
+  filter(year >= 2005, year <= 2015) |>
+  mutate(country_territory = if_else(country_territory == 'Democratic Republic of Congo', 'DR Congo', country_territory))
+
+top10_countries <- 
+  data2plot |> 
+  group_by(country_territory) |> 
+  summarise(all_deaths_malaria = sum(malaria)) |>
+  ungroup() |>
+  slice_max(order_by = all_deaths_malaria, n = 10) |>
+  pull(country_territory)
+
+data2plot <- 
+  data2plot |> filter(country_territory %in% top10_countries) |>
+  group_by(year) |>
+  mutate(rank = rank(malaria, ties.method = "random")) |>
+  ungroup()
+
+delta_values <-
+  data2plot |>
+  filter(year %in% c(2005,2015)) |> select(-malaria) |>
+  pivot_wider(id_cols = country_territory, names_from = year, values_from = rank, names_prefix = 'year_') |>
+  mutate(max_dif = year_2015 - year_2005)
+
+max_decrease_country <-
+  data2plot |> filter(country_territory == delta_values |> slice_max(max_dif, n = 1) |> pull(country_territory))
+
+max_increase_country <-
+  data2plot |> filter(country_territory == delta_values |> slice_min(max_dif, n = 1) |> pull(country_territory))
+
+data2plot_final <- 
+  data2plot |>
+  filter(!country_territory %in% c(unique(max_decrease_country$country_territory),unique(max_increase_country$country_territory)))
+
+data2plot_final |>
+  ggplot(aes(x = year, y = rank)) +
+  geom_bump(smooth = , linewidth = 1, color = 'black', alpha = .1, aes(group = country_territory)) +
+  geom_point(size = 3.5, color = 'white') +
+  geom_point(size = 2, color = 'grey90') +
+  geom_text(
+    data = data2plot_final %>% filter(year == min(year)),
+    aes(x = year - .3, label = country_territory), 
+    size = 3, hjust = 1, family = 'Ubuntu',
+    color = 'grey70') +
+  geom_text(
+    data = data2plot_final %>% filter(year == max(year)),
+    aes(x = year + .3, label = country_territory),
+    size = 3, hjust = 0, family = 'Ubuntu',
+    color = 'grey70') +
+
+  ## Highest Increase
+  geom_bump(data = max_increase_country, smooth = , linewidth = 1, color = '#EA6052', aes(group = country_territory)) +
+  geom_point(data = max_increase_country, size = 3.5, color = '#EA6052') +
+  geom_point(data = max_increase_country, size = 1.5, color = 'white') +
+  geom_text(
+    data = max_increase_country %>% filter(year == min(year)),
+    aes(x = year - .4, label = country_territory), 
+    size = 3, hjust = 1, family = 'Ubuntu',
+    color = '#EA6052', fontface = "bold") +
+  geom_text(
+    data = max_increase_country %>% filter(year == max(year)),
+    aes(x = year + .4, label = country_territory),
+    size = 3, hjust = 0, family = 'Ubuntu',
+    color = '#EA6052', fontface = "bold") +
+  # First Rank - Highest Increase
+  geom_point(
+    data = max_increase_country %>% filter(year == min(year)),
+    size = 7.5,
+    color = '#EA6052') +
+  geom_point(
+    data = max_increase_country %>% filter(year == min(year)),
+    size = 5.5,
+    color = 'white') +
+  geom_text(
+    data = max_increase_country %>% filter(year == min(year)),
+    aes(label = rank),
+    size = 3, hjust = .5, family = 'Ubuntu',
+    color = '#EA6052', fontface = "bold") +
+  # Last Rank - Highest Increase
+  geom_point(
+    data = max_increase_country %>% filter(year == max(year)),
+    size = 7.5,
+    color = '#EA6052') +
+  geom_point(
+    data = max_increase_country %>% filter(year == max(year)),
+    size = 5.5,
+    color = 'white') +
+  geom_text(
+    data = max_increase_country %>% filter(year == max(year)),
+    aes(label = rank),
+    size = 3, hjust = .5, family = 'Ubuntu',
+    color = '#EA6052', fontface = "bold") +
+
+   ## Highest Decrease
+  geom_bump(data = max_decrease_country, smooth = , linewidth = 1, color = '#18436D', aes(group = country_territory)) +
+  geom_point(data = max_decrease_country, size = 3.5, color = '#18436D') +
+  geom_point(data = max_decrease_country, size = 1.5, color = 'white') +
+  geom_text(
+    data = max_decrease_country %>% filter(year == min(year)),
+    aes(x = year - .4, label = country_territory), 
+    size = 3, hjust = 1, family = 'Ubuntu',
+    color = '#18436D', fontface = "bold") +
+  geom_text(
+    data = max_decrease_country %>% filter(year == max(year)),
+    aes(x = year + .4, label = country_territory),
+    size = 3, hjust = 0, family = 'Ubuntu',
+    color = '#18436D', fontface = "bold") +
+  # First Rank - Highest Decrease
+  geom_point(
+    data = max_decrease_country %>% filter(year == min(year)),
+    size = 7.5,
+    color = '#18436D') +
+  geom_point(
+    data = max_decrease_country %>% filter(year == min(year)),
+    size = 5.5,
+    color = 'white') +
+  geom_text(
+    data = max_decrease_country %>% filter(year == min(year)),
+    aes(label = rank),
+    size = 3, hjust = .5, family = 'Ubuntu',
+    color = '#18436D', fontface = "bold") +
+  # Last Rank - Highest Decrease
+  geom_point(
+    data = max_decrease_country %>% filter(year == max(year)),
+    size = 7.5,
+    color = '#18436D') +
+  geom_point(
+    data = max_decrease_country %>% filter(year == max(year)),
+    size = 5.5,
+    color = 'white') +
+  geom_text(
+    data = max_decrease_country %>% filter(year == max(year)),
+    aes(label = rank),
+    size = 3, hjust = .5, family = 'Ubuntu',
+    color = '#18436D', fontface = "bold") +
+
+  theme(
+    axis.title.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.line.y.left = element_blank(),
+  ) +
+  scale_y_reverse(
+    breaks = seq(
+      data2plot |> pull(rank) |> min(), 
+      data2plot |> pull(rank) |> max(),
+      1
+  )) +
+  scale_x_continuous(
+    breaks = seq(
+      data2plot |> pull(year) |> min(), 
+      data2plot |> pull(year) |> max(),
+      1),
+    expand = c(0,2,0,2)) +
+    guides(color = 'none') +
+    labs(x = NULL, title = 'Top 10 Countries by Malaria Deaths (2005–2015)', caption = "SOURCE: Our World in Data",
+    subtitle = str_wrap('Malaria remains one of the leading causes of death in low-resource settings—this chart reveals changing patterns in the global toll over a decade', width = 80))
+  
+
+
+ ```
