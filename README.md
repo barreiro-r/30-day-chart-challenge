@@ -12,5 +12,3 @@ My submissions for the [#30DayChartChallenge](https://github.com/30DayChartChall
 | 04. Big or Small      | 10. Multi-modal      | 16. Negative          | 22. Stars                | 28. Inclusion                    |
 | 05. Ranking           | 11. Stripes          | 17. Birds             | 23. Log Scale            | 29. Extraterrestrial             |
 | 06. Florence Nightingale (theme day) | 12. Data.gov (data day) | 18. El Pais (theme day) | 24. World Health Organization (data day) | 30. National Geographic (theme day) |
-
-test
