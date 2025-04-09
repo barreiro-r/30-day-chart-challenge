@@ -1,11 +1,12 @@
 ---
-title: "Breast Cancer Wisconsin"
+title: "#30DayChartChallenge"
 format: html
 echo: false
 warning: false
 message: false
 ---
-
+# 30DayChartChallenge
+## Day 07 -  Outliers
 
 ```{r setup}
 library(tidyverse)
@@ -45,7 +46,7 @@ raw_data <-
   read_tsv('2025/datasets/GCST005076.h.tsv.gz')
 ```
 
-## Prepare date for manhatan plot
+### Prepare date for manhattan plot
 See https://danielroelfs.com/blog/how-i-create-manhattan-plots-using-ggplot/ and https://r-graph-gallery.com/101_Manhattan_plot.html for details.
 ```{r}
 data2plot <- 
@@ -73,7 +74,7 @@ axisdf <- data2plot |>
   summarize(center=( max(bp_cumulative) + min(bp_cumulative) ) / 2 )
 ```
 
-## Set highlight data
+###  Set highlight data
 ```{r}
 data_highlight <-
   data2plot |>
@@ -110,7 +111,7 @@ data_highlight <-
   slice_max(order_by = log10_pvalue, n = 1)
 ```
 
-## Let's plot (finally)
+###  Let's plot (finally)
 ```{r}
 data2plot |>
   filter(log10_pvalue > 1) |>
