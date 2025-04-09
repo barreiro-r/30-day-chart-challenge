@@ -1,11 +1,13 @@
 ---
-title: "Breast Cancer Wisconsin"
+title: "#30DayChartChallenge"
 format: html
 echo: false
 warning: false
 message: false
 ---
 
+# 30DayChartChallenge
+## Day 01 - Fractions
 
 ```{r setup}
 library(tidyverse)

@@ -1,11 +1,13 @@
 ---
-title: "Breast Cancer Wisconsin"
+title: "#30DayChartChallenge"
 format: html
 echo: false
 warning: false
 message: false
 ---
 
+# 30DayChartChallenge
+## Day 02 - Fractions
 
 ```{r setup}
 library(tidyverse)
@@ -24,9 +26,8 @@ theme_set(
     panel.grid = element_line(linewidth = .3, color = 'grey80'),
     panel.grid.minor = element_blank(),
     axis.ticks.length = unit(-0.15, "cm"),
-    plot.background = element_rect(fill = '#F0F0F0'),
     plot.title.position = "plot",
-    plot.title = element_markdown(family = "Ubuntu", size = 14),
+    plot.title = element_text(family = "Ubuntu", size = 14, face = 'bold'),
     plot.subtitle = element_markdown(size = 10,lineheight = 1.25, margin = margin(0,0,20,0)),
     axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 9),
     axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8),
@@ -99,9 +100,9 @@ data2plot |>
         aes(label = scales::percent(value), color = age_bin),
         hjust = 0, nudge_x = 0.07, direction = "y",
         segment.size = 0.0, size = 3, show.legend = FALSE,
-        bg.color = "#F0F0F0", bg.r = 0.3) +
+        bg.color = "white", bg.r = 0.3) +
     labs(
-        title = "**Effect of SMS Reminders on Medical Appointment No-Shows**",
+        title = "Effect of SMS Reminders on Medical Appointment No-Shows",
         subtitle = str_wrap("A person gets all the information, an appointment is set and they still don't show up.This chart explores whether sending SMS reminders can shift that outcome across age groups.", width = 80) |> str_replace_all("\n", "<br>"),
 
         y = "Relative No-show (%)",
