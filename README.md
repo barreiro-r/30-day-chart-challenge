@@ -6,7 +6,7 @@ My submissions for the [#30DayChartChallenge](https://github.com/30DayChartChall
 
 | Comparisons           | Distributions        | Relationships        | Timeseries               | Uncertainties                   |
 |-----------------------|----------------------|-----------------------|--------------------------|----------------------------------|
-| 01. Fractions ![day1](/2025/images/day01.png)         | 07. Outliers         | 13. Clusters          | 19. Smooth               | 25. Risk                         |
+| 01. Fractions ![day1](/2025/images/day01.png)         | 07. Outliers ![day7](/2025/images/day07.png)        | 13. Clusters          | 19. Smooth               | 25. Risk                         |
 | 02.Slope ![day2](/2025/images/day02.png) | 08. Histogram        | 14. Kinship           | 20. Urbanization         | 26. Monochrome                   |
 | 03. Circular ![day3](/2025/images/day03.png) | 09. Diverging        | 15. Complicated       | 21. Fossils              | 27. Noise                        |
 | 04. Big or Small ![day4](/2025/images/day04.png) | 10. Multi-modal      | 16. Negative          | 22. Stars                | 28. Inclusion                    |
