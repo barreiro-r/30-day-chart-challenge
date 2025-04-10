@@ -173,8 +173,10 @@ data2plot |>
     color = 'grey60'
   ) +
   facet_wrap(~country, ncol = 6) +
-  scale_color_gradientn(colours = ggsci::pal_frontiers()(5) |> rev(), limits = c(-max_value,max_value)) +
-  scale_fill_gradientn(colours = ggsci::pal_frontiers()(5) |> rev(), limits = c(-max_value,max_value)) +
+  scale_color_gradientn(
+    colours = ggsci::pal_frontiers()(5) |> rev(), limits = c(-max_value,max_value)) +
+  scale_fill_gradientn(
+    colours = ggsci::pal_frontiers()(5) |> rev(), limits = c(-max_value,max_value)) +
   theme(panel.spacing.x = unit(.5, "lines"),
     axis.text.x = element_blank(),
     ) +
@@ -183,7 +185,8 @@ data2plot |>
     title = 'Global Smoking Trends: Top 5 Biggest Increases and Decreases (1980–2012)',
     subtitle = 'A comparative look at the five countries with the largest rises and falls in smoking prevalence',
     x = NULL,
-    y = 'Smoking Prevalence'
+    y = 'Smoking Prevalence',
+    caption = 'SOURCE Kaggle - Global Smoking Trend'
   ) +
   guides(color = 'none', fill = 'none')
 ```
