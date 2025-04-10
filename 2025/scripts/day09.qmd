@@ -7,7 +7,7 @@ message: false
 ---
 
 # 30DayChartChallenge
-## Day 09 -  Histogram
+## Day 09 -  Diverging
 
 ```{r setup}
 library(tidyverse)
