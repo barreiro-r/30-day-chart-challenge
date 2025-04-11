@@ -33,7 +33,7 @@ theme_set(
     axis.ticks.length = unit(-0.15, "cm"),
     plot.background = element_blank(),
     plot.title.position = "plot",
-    plot.title = element_text(family = "Ubuntu", size = 14, face = 'bold'),
+    plot.title = element_text(family = "Ubuntu", size = 24, face = 'bold'),
     plot.caption = element_text(size = 6, color = '#474747',margin = margin(10,0,0,0)),
     plot.subtitle = element_text(size = 10,lineheight = 1.15, margin = margin(0,0,20,0)),
     axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 9),
@@ -161,12 +161,13 @@ data2plot |>
       color = year
     )
   ) +
-  geom_text(
+  geom_label(
     data = delta_data,
     y = 35,
     aes(label = label, fill_delta_label = direction),
     size = 2.5,
-    show_guide = FALSE
+    show_guide = FALSE,
+    fill = 'grey90'
   ) +
   # --- I was adding dot and erro, but looked to busy ---
   # geom_point(
@@ -217,14 +218,14 @@ data2plot |>
   theme(
     strip.text = element_text(face = 'bold'),
     legend.position = 'bottom',
-    legend.,
+    panel.background = element_rect(fill = 'grey97', color = NA)
   ) +
   labs(
     x = NULL,
     y = "Daily Average Temperature",
     color = NULL,
     title = 'Daily Temperature Changes in Major Cities',
-    subtitle = str_wrap("Each dot represents a day’s average temperature in 1995 and 2020, with vertical lines marking monthly means. Despite noticeable variance, the overall trend shows shifting temperatures.", width = 100),
+    subtitle = str_wrap("Each dot represents a day’s average temperature in 1995 and 2020, with vertical lines marking monthly means of the 1995 and 2020. Despite noticeable variance, the overall trend shows shifting temperatures.", width = 100),
     caption = 'SOURCE Kaggle Daily Temperature of Major Cities'
   ) +
   guides(
