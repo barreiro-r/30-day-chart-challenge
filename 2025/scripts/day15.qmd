@@ -7,7 +7,7 @@ message: false
 ---
 
 # 30DayChartChallenge
-## Day 11 -  Stripes
+## Day 15 -  Complicated
 
 ```{r setup}
 library(tidyverse)
