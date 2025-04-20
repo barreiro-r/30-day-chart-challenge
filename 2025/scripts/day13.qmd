@@ -1,0 +1,128 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 13 -  Clusters
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(MetBrewer)
+library(lubridate)
+library(ggh4x)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 18, face = 'bold'),
+    plot.caption = element_text(size = 8, color = '#474747',margin = margin(10,0,0,0)),
+    plot.subtitle = element_text(size = 10,lineheight = 1.15, margin = margin(0,0,5,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 10),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 10),
+    axis.text = element_markdown(family = "Ubuntu", hjust = .5, size = 10, color = "#474747"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+
+### Preparing data for plot
+```{r}
+my_data <- read_csv('2025/datasets/wisconsin.csv')
+
+my_data |>
+  dplyr::select(-id) |> 
+  pivot_longer(cols = -diagnosis, names_to = 'variable', values_to = 'value') |>
+  group_by(diagnosis, variable) |>
+  summarise(median = median(value)) |>
+  ungroup() |>
+  pivot_wider(names_from = diagnosis, values_from = median, names_prefix = 'median_') |>
+  mutate(diff = median_B - median_M, abs_diff = -abs(diff)) |>
+  arrange(abs_diff)
+
+data2plot <- 
+  my_data |>
+    dplyr::select(matches(str_c("diagnosis","area", "perimeter", "concavity", "texture", sep = '|'))) |>
+    dplyr::select(-matches('_se')) |>
+    pivot_longer(cols = -c('area_mean', 'area_worst', 'diagnosis'), names_to = 'variable', values_to = 'values') |>
+    pivot_longer(cols = c('area_mean', 'area_worst'), names_to = 'area', values_to = 'area_values') |>
+    mutate(area_class = str_replace(area, '.*_', '')) |>
+    mutate(variable_class = str_replace(variable, '.*_', '')) |>
+    mutate(variable = str_replace(variable, '_.*', '')) |>
+    filter(area_class == variable_class)
+```
+
+
+```{r}
+create_density_2d_group <- function(my_data, group){
+  list(
+    stat_density_2d(
+      data  = my_data |> filter(diagnosis == group),
+      contour_var = "ndensity",
+      aes(fill = diagnosis),
+      alpha = .15,
+      geom = "polygon",
+      color = NA,
+      bins = 10,
+      key_glyph = 'point'
+    ),
+      stat_density_2d(
+      data  = my_data |> filter(diagnosis == group),
+      contour_var = "ndensity",
+      aes(color = diagnosis),
+      bins = 10,
+      alpha = .3,
+      show.legend = FALSE
+    )
+  )
+}
+
+data2plot |>
+  filter(variable_class == 'mean') |>
+  ggplot(aes(x = values, y = area_values)) +
+  create_density_2d_group(data2plot,"M") +
+  create_density_2d_group(data2plot,"B") +
+  facet_grid( ~ variable, scales = 'free', labeller = labeller(.default = stringr::str_to_title)) +
+  scale_fill_manual(values = c('M' = "#574571",'B' = "#2C4B27"), label = c("B" = 'Benign', 'M' = 'Malignant')) +
+  scale_color_manual(values = c('M' = "#574571",'B' = "#2C4B27")) +
+  labs(x = "Area", y = NULL, fill = NULL,
+    title = "Cell Nuclei Morphology",
+    subtitle = str_wrap("Features are computed from a digitized image of a fine needle aspirate (FNA) of a breast mass. They describe characteristics of the cell nuclei present in the image.", width = 80),
+    caption = "SOURCE Breast Cancer Wisconsin Data Set") +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.line = element_blank(),
+    legend.position = "top",
+    legend.text = element_text(hjust = 0),
+    legend.justification = c(0, 1)
+  ) +
+  guides(fill = guide_legend(
+    override.aes = list(
+       alpha = 1,
+       linetype = 0,
+       shape = 21,
+       size = 4)
+       )
+  )
+```
