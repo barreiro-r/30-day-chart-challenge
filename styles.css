@@ -269,3 +269,7 @@ footer svg {
          height: 31.25rem; /* Equivalent to lg:h-[500px] */
     }
 }
+
+#title-block-header {
+    display: none;
+}
