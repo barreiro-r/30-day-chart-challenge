@@ -1,0 +1,142 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 02 - Fractions
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    panel.grid = element_line(linewidth = .3, color = 'grey80'),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 14, face = 'bold'),
+    plot.subtitle = element_markdown(size = 10,lineheight = 1.25, margin = margin(0,0,20,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 9),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8),
+    axis.text = element_markdown(family = "Chakra Petch", hjust = .5, size = 8, color = "#474747"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+```{r load_data}
+
+# Define pretty labels for categories (used in x-axis of plot)
+pretty_labels <- c(
+  "relative_per_no_sms" = "Not received SMS",
+  "relative_per_sms" = "Received SMS"
+)
+
+# Read and preprocess the data
+data2plot <- 
+  read_csv('2025/datasets/noshowappointments.csv') |>        
+  clean_names() |>                                            
+  filter(age >= 20, age < 80) |>                              
+  mutate(age_bin = cut( # Bin age into 10-year intervals
+    age,
+    breaks = seq(20, 80, by = 10),
+    right = FALSE,
+    labels = c("20-29", "30-39", "40-49", "50-59", "60-69", "70-79")
+  )) |>
+  count(sms_received, no_show, age_bin) |>                    
+  mutate(sms_received = if_else(sms_received == 1, "SMS", "No SMS")) |>  
+  group_by(sms_received, age_bin) |>                          
+  mutate(per = n / sum(n)) |>                                 
+  filter(no_show == "No") |>                                  
+  select(-no_show, -n) |>                                     
+  pivot_wider(                                                
+    id_cols = age_bin, 
+    names_from = sms_received, 
+    values_from = per
+  ) |>
+  mutate(
+    relative_per_no_sms = `No SMS` - `No SMS`, # Baseline for 'No SMS'
+    relative_per_sms = SMS - `No SMS`  # Relative difference
+  ) |>
+  select(-`No SMS`, -SMS) |>                                  
+  pivot_longer(                                              
+    cols = relative_per_no_sms:relative_per_sms,
+    names_to = "categ",
+    values_to = "value"
+  )
+
+# Add aggregate 'all' row with mean value per category
+data2plot <- 
+  bind_rows(
+    data2plot,
+    data2plot |> 
+      group_by(categ) |>
+      summarise(value = mean(value), .groups = "drop") |>
+      mutate(age_bin = "Overall") |>
+      select(age_bin, categ, value)
+  )
+
+# Plot the result
+data2plot |>
+    ggplot(aes(x = categ, y = value)) +
+    geom_line(aes(group = age_bin, color = age_bin), show.legend = FALSE, linewidth = 1) +
+    geom_point(aes(color = age_bin), size = 4) +
+    ggrepel::geom_text_repel(
+        data = . %>% filter(categ == "relative_per_sms"),
+        aes(label = scales::percent(value), color = age_bin),
+        hjust = 0, nudge_x = 0.07, direction = "y",
+        segment.size = 0.0, size = 3, show.legend = FALSE,
+        bg.color = "white", bg.r = 0.3) +
+    labs(
+        title = "Effect of SMS Reminders on Medical Appointment No-Shows",
+        subtitle = str_wrap("A person gets all the information, an appointment is set and they still don't show up.This chart explores whether sending SMS reminders can shift that outcome across age groups.", width = 80) |> str_replace_all("\n", "<br>"),
+
+        y = "Relative No-show (%)",
+        x = NULL,
+        color = '**Age**') +
+    scale_color_manual(
+        values = c(
+        colorRampPalette(c("#8a9fb5", "#4295ed", "#132B43"))(6),
+        "orange")) +  # for the "all" group
+    scale_y_continuous(
+        labels = scales::percent, 
+        expand = c(0.2, 0, 0.1, 0)) +
+    scale_x_discrete(labels = pretty_labels) +
+    theme(
+        panel.grid.major.x = element_blank(),
+        legend.position = c(0, 0),
+        legend.justification = c(0, 0),
+        legend.direction = "vertical",
+        legend.box.just = "left",
+
+        # Reduce legend size
+        legend.key.size = unit(.5, "lines"),
+        legend.key.spacing = unit(.3,'lines'),
+        legend.text = element_text(size = 8),
+        legend.title = element_markdown(size = 8),
+
+        legend.margin = margin(t = 10, r = 10, b = 10, l = 10, unit = "pt")
+        
+    ) + guides(
+    color = guide_legend(
+      override.aes = list(size = 2)  # Set a smaller point size in the legend
+    )
+)
+
+
+
+```

@@ -1,0 +1,113 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 08 -  Histogram
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(viridis)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 14, face = 'bold'),
+    plot.caption = element_text(size = 6, color = '#474747',margin = margin(10,0,0,0)),
+    plot.subtitle = element_text(size = 10,lineheight = 1.15, margin = margin(0,0,20,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 9),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8),
+    axis.text = element_markdown(family = "Chakra Petch", hjust = .5, size = 8, color = "#474747"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+
+)
+```
+
+### Load Data
+```{r}
+raw_data <- 
+    read_csv('2025/datasets/health_activity_data.csv')
+```
+
+### Preparing data for plot
+```{r}
+data2plot <- 
+  raw_data |>
+    janitor::clean_names() |>
+    select(gender,daily_steps, hours_of_sleep, exercise_hours_per_week) |>
+    pivot_longer(cols = -gender, names_to = 'measure', values_to = 'value') |>
+    mutate(measure = str_replace_all(str_to_sentence(measure), "_", " "))
+```
+
+### Plotting
+```{r}
+# This function takes a numeric vector `x` and returns a character vector where:
+#  1) Values >= 1000 become e.g. "1000" -> "1k", "2000" -> "2k".
+#  2) Whole numbers (1.0, 2.0, etc.) have the .0 removed ("1.0" -> "1").
+#  3) Non-whole numbers keep their decimal part as is.
+# Its useful for pretty labeling of axis
+custom_label <- function(x) {
+  sapply(x, function(val) {
+    if (val >= 1000) {
+      paste0(val / 1000, "k")
+    } else if (val %% 1 == 0) {
+      as.character(val)  # e.g. 1.0 → "1"
+    } else {
+      as.character(val)  # keep decimals as is
+    }
+  })
+}
+
+
+data2plot|>
+    ggplot(aes(x = value)) +
+    geom_histogram(
+        data =  . %>% filter(gender == 'Male'), 
+        aes(fill_m=..count..),
+        bins=30) +
+    geom_histogram(
+        data =  . %>% filter(gender == 'Female'),
+        aes(fill_f=..count..), 
+        bins=30) +
+    facet_grid(gender~measure, scale = 'free_x', switch = "x" ) +
+    scale_fill_viridis(option="plasma") +
+    scale_fill_multi(
+    aesthetics = c("fill_m", "fill_f"),
+    name = list("Blue", "Pink"),
+    colours = list(
+        viridis(10),
+        plasma(10)
+    )
+  ) +
+    scale_y_continuous(limits = c(0,45),breaks = seq(0, 30, by = 10), expand = c(0,0,0,0)) +
+    scale_x_continuous(label = custom_label) +
+    coord_cartesian(ylim = c(0,30)) +
+    guides(fill_f = 'none', fill_m = 'none') +
+    theme(panel.spacing.y = unit(1, "lines"),
+    strip.placement = "outside") +
+    labs(x = NULL, y = "Number of people",
+    title = 'Health & Lifestyle',
+    subtitle = 'A comparative look at daily steps, weekly exercise hours, and sleep duration by gender.\nFrom 0 to 20k steps a day? Wow.',
+    caption = 'Kaggle: Health & Lifestyle Dataset')
+```

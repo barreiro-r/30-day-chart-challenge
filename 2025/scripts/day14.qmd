@@ -1,0 +1,64 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 14 -  Kinship
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(MetBrewer)
+library(lubridate)
+library(ggh4x)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 18, face = 'bold'),
+    plot.caption = element_text(size = 8, color = '#474747',margin = margin(10,0,0,0)),
+    plot.subtitle = element_text(size = 10,lineheight = 1.15, margin = margin(0,0,5,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 10),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 10),
+    axis.text = element_markdown(family = "Ubuntu", hjust = .5, size = 10, color = "#474747"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+
+### Preparing data for plot
+```{r, fig.height=2.5, fig.width=2.5, fig.dpi=300}
+library(pedtools)
+x <- pedtools::nuclearPed(nch = 2)
+
+m1 = marker(x, "1" = "A/a", "2" = "a/a", "3" = 'a/a', '4' = 'A/a')
+p <- plot(
+  x,  
+  marker = m1, 
+  labs = FALSE,
+  sep = "",
+  title = "Autosomal Dominant",
+  fill = c('1' = "#f0465f", '3' = "#f0465f"), 
+  col = c('1' = "#611f29", '3' = "#611f29") 
+  )
+```

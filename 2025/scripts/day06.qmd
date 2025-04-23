@@ -1,0 +1,132 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 06 -  Florence Nightingale (theme day)
+
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(ggbump)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 14, face = 'bold'),
+    plot.subtitle = element_text(size = 10,lineheight = 1.15, margin = margin(0,0,20,0)),
+    # axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 9),
+    # axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8),
+    axis.text = element_markdown(family = "Chakra Petch", hjust = .5, size = 8, color = "#474747"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+
+)
+```
+
+```{r load_data}
+raw_data <- 
+  read_csv('2025/datasets/monthlycounts-of-deaths-by-selectcauses2014-2023.csv')
+
+name_dict <- names(raw_data)
+names(name_dict) <- names(raw_data |> janitor::clean_names())
+
+
+data2plot <- 
+  raw_data |>
+  janitor::clean_names() |> 
+  select(-location) |>
+  filter(year >= 2020 & year <= 2022) |>
+  select(-all_cause, -natural_cause) |>
+  pivot_longer(cols = septicemia:covid_19_underlying_cause_of_death, names_to = 'cause_of_death', values_to = 'n')
+
+most_common <-
+  data2plot |>
+  group_by(cause_of_death) |>
+  summarise(total = sum(n)) |>
+  arrange(desc(total)) |>
+  head(7) |> pull(cause_of_death)
+
+data2plot <- 
+  data2plot |>
+  mutate(cause_of_death = if_else(str_detect(cause_of_death,'covid'), cause_of_death, 'other'))
+
+# sum other
+data2plot_other <- 
+  data2plot |> 
+  filter(cause_of_death == 'other') |>
+  group_by(year, month, cause_of_death) |>
+  summarise(n = sum(n))
+
+data2plot <- 
+  data2plot |>
+  filter(cause_of_death != 'other') |>
+  bind_rows(data2plot_other)
+
+# calc percentages
+data2plot <-
+  data2plot |> group_by(year, month) |>
+  mutate(per = n / sum(n))
+
+data2plot <- 
+  data2plot |>
+  mutate(cause_of_death = case_when(
+    cause_of_death == "covid_19_multiple_cause_of_death" ~ "COVID-19 Related",
+    cause_of_death == "covid_19_underlying_cause_of_death" ~ "COVID-19",
+    cause_of_death == "other" ~ "Other",
+    TRUE ~ "ERROR"
+  ))
+```
+
+```{r}
+data2plot |>
+  ggplot(aes( x = lubridate::month(month, label = TRUE, abbr = TRUE), y = per)) +
+  geom_col(aes(fill = cause_of_death), width = 1.1) +
+  facet_wrap(~year) +
+  coord_radial(expand = FALSE) +
+  scale_fill_manual(values = c(
+  "COVID-19" = "#8c1919",
+  "COVID-19 Related" = "#E76254",
+  "Other" = "grey90")) +
+  geom_text(
+    size = 6,
+    color='grey40',
+    family = 'Chakra Petch',
+    data =  tibble(year = c(2020, 2021, 2022)), x = 0, y=0, aes(label = year)) +
+  theme(
+    axis.title =  element_blank(),
+    axis.text.y =  element_blank(),
+    strip.text = element_blank(),
+    strip.background = element_blank(),
+    panel.spacing = unit(1, "cm"),
+    legend.spacing = unit(0.1, 'cm'),
+    legend.key.height= unit(0.3, 'cm'),
+    legend.key.width= unit(0.5, 'cm'),
+    legend.position = 'bottom', legend.justification = 'left',
+  ) + 
+  labs(
+    title = "US COVID-19’s Impact on Cause of Death",
+    subtitle = str_wrap("COVID-19, one of the most disruptive global health crises in recent history, significantly altered mortality trends. This visualization highlights the proportion of deaths due to non-natural causes across three years.", width = 80),
+    fill = NULL)
+
+```
