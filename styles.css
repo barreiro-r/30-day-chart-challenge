@@ -1,0 +1,271 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Ubuntu', sans-serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%; /* Use 100% instead of 100vh for better compatibility */
+    align-items: center;
+    background-color:rgb(214, 218, 225); /* Keep the base color */
+    background-image: radial-gradient(rgba(150, 163, 181, 0.3) 1px, transparent 1px); /* Light gray dots */
+    background-size: 10px 10px; /* Adjust size/spacing of dots */
+    padding: 1rem; /* Equivalent to p-4 */
+    line-height: 1.5; /* Default line height */
+}
+
+.gallery-main {
+     width: 100%;
+     display: flex;
+     justify-content: center;
+     flex-grow: 1;
+}
+
+/* --- Header Styles (Updated) --- */
+.page-header {
+    text-align: center;
+    margin-top: 6rem; /* Add some space above */
+    margin-bottom: 4rem; /* Space between header and gallery */
+}
+.page-header .main-title {
+    font-size: 4rem; /* Larger font size (adjust as needed) */
+    font-weight: 700; /* Bold */
+    color: #1f2937; /* Dark gray */
+    line-height: 1.1; /* Tighter line height */
+    display: block; /* Ensure it takes its own line */
+    letter-spacing: -.05em;
+}
+.page-header .sub-title {
+    font-size: 1.3rem; /* Smaller font size */
+    color: #4b5563; /* Medium gray */
+    margin-top: 0.25rem; /* Small space below main title */
+    display: block; /* Ensure it takes its own line */
+}
+.page-header .gradient-year {
+    font-weight: 100; 
+    background-image: linear-gradient(to right, #3b82f6, #9333ea); /* Blue to Purple */
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+/* Gallery Container Styles */
+.gallery-container {
+    width: 100%;
+    max-width: 48rem; /* Equivalent to max-w-3xl */
+    background-color: #ffffff; /* Equivalent to bg-white */
+    border-radius: 0.5rem; /* Equivalent to rounded-lg */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); /* Equivalent to shadow-2xl */
+    overflow: hidden; /* Equivalent to overflow-hidden */
+    margin-top: 2rem; /* Equivalent to my-8 (top) */
+    margin-bottom: 2rem; /* Equivalent to my-8 (bottom) */
+}
+
+/* Header Styles */
+.gallery-header {
+    font-size: 1.25rem; /* Equivalent to text-xl */
+    font-weight: 600; /* Equivalent to font-semibold */
+    text-align: center; /* Equivalent to text-center */
+    color: #1f2937; /* Equivalent to text-gray-800 */
+    padding: 1rem; /* Equivalent to p-4 */
+    border-bottom: 1px solid #e5e7eb; /* Equivalent to border-b border-gray-200 */
+}
+
+/* Main Image Area Styles */
+.main-image-container {
+    width: 100%;
+    height: 16rem; /* Equivalent to h-64 (base) */
+    background-color: #fff; /* Equivalent to bg-gray-200 */
+    display: flex;
+    align-items: center; /* Equivalent to items-center */
+    justify-content: center; /* Equivalent to justify-center */
+    padding: 1rem;
+}
+
+#mainImage {
+    display: block; /* Equivalent to block */
+    max-width: 100%; /* Equivalent to max-w-full */
+    max-height: 100%; /* Equivalent to max-h-full */
+    object-fit: contain; /* Equivalent to object-contain */
+}
+
+/* Museum Card Styles */
+.museum-card {
+    border-top: 1px solid #e5e7eb; /* Equivalent to border-b border-gray-200 */
+    padding: 1rem; /* Equivalent to p-4 */
+    font-size: 0.875rem; /* Equivalent to text-sm */
+    color: #374151; /* Equivalent to text-gray-700 */
+    background-color: #f9fafb;
+}
+.museum-card p {
+    margin: 0;
+    /* padding: 0.05rem 0; */
+}
+.museum-card strong { /* Equivalent to text-gray-900 on author */
+     color: #111827;
+     font-weight: 700; /* Ensure strong is bold */
+}
+
+/* Style for the link paragraph */
+.museum-card .link-paragraph {
+    margin-top: 0.5rem; /* Add some space above the link */
+}
+/* Style for the link itself */
+.museum-card a {
+    color: #2563eb; /* Link color */
+    text-decoration: none;
+    display: inline-flex; /* Align icon and text */
+    align-items: center; /* Center icon and text vertically */
+    gap: 0.25rem; /* Space between icon and text */
+}
+.museum-card a:hover {
+    text-decoration: none;
+}
+/* Style for Material Symbols icon */
+.material-symbols-outlined {
+ font-variation-settings:
+ 'FILL' 0,
+ 'wght' 400,
+ 'GRAD' 0,
+ 'opsz' 20; /* Match font size */
+ font-size: 1.1em; /* Slightly larger than text */
+ vertical-align: middle; /* Align icon nicely */
+}
+
+/* Thumbnail Area Styles */
+.thumbnail-groups-container {
+    padding: 1rem; /* Equivalent to p-4 */
+    background-color: #fff; /* Equivalent to bg-gray-50 */
+    border-top: 1px solid #e5e7eb; /* Equivalent to border-t border-gray-200 */
+}
+
+.thumbnail-row {
+    display: flex; /* Equivalent to flex */
+    align-items: center; /* Equivalent to items-center */
+    margin-bottom: 1rem; /* Equivalent to mb-4 */
+}
+
+.week-label {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    white-space: nowrap;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #4b5563; /* Equivalent to gray-600 */
+    text-align: center;
+    margin-right: 0.75rem; /* Equivalent to mr-3 */
+    padding: 0.5rem 0.25rem; /* Equivalent to py-2 px-1 */
+    background-color: #e5e7eb; /* Equivalent to gray-200 */
+    border-radius: 0.375rem; /* Equivalent to rounded-md */
+    flex-shrink: 0;
+ }
+
+.thumbnail-group-scroll {
+    display: flex; /* Equivalent to flex */
+    gap: 1rem; /* Equivalent to space-x-4 */
+    overflow-x: auto; /* Equivalent to overflow-x-auto */
+    padding-bottom: 0.75rem; /* Equivalent to pb-3 */
+    scrollbar-width: thin;
+    scrollbar-color: #a0aec0 #e2e8f0;
+    flex-grow: 1;
+    min-width: 0;
+}
+.thumbnail-group-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+.thumbnail-group-scroll::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 3px;
+}
+.thumbnail-group-scroll::-webkit-scrollbar-thumb {
+    background-color: #a0aec0;
+    border-radius: 3px;
+    border: 1px solid #e2e8f0;
+}
+
+.thumbnail-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 100px;
+}
+ .thumbnail-item .title {
+     font-size: 0.75rem; /* Equivalent to text-xs */
+     font-weight: 500; /* Equivalent to font-medium */
+     color: #4b5563; /* Equivalent to gray-700 */
+     margin-bottom: 0.25rem; /* Equivalent to mb-1 */
+     white-space: nowrap;
+     overflow: hidden;
+     text-overflow: ellipsis;
+     display: block;
+     max-width: 100%;
+     text-align: center;
+ }
+
+.thumbnail {
+    height: 4rem; /* Equivalent to h-16 */
+    width: auto; /* Equivalent to w-auto */
+    border-radius: 0.375rem; /* Equivalent to rounded-md */
+    transition: opacity 0.2s ease-in-out, border 0.2s ease-in-out;
+    opacity: 0.7;
+    cursor: pointer;
+    flex-shrink: 0;
+    border: 3px solid transparent; /* Reserve space for active border */
+}
+.thumbnail:hover {
+    opacity: 1;
+}
+.thumbnail-active {
+    border: 2px solid #9333ea;
+    opacity: 1;
+}
+
+/* Footer Styles */
+footer {
+    width: 100%; /* Span full width */
+    /* Removed max-width: 48rem; */
+    margin-top: auto; /* Pushes footer down when content is short */
+    padding: 1rem; /* Add padding for content */
+    text-align: center;
+    color: #4b5563; /* Adjusted text color for contrast */
+    font-size: 0.875rem;
+}
+footer a {
+    color: #2563eb; /* Adjusted link color */
+    text-decoration: none;
+}
+footer a:hover {
+     text-decoration: underline;
+}
+footer svg {
+     display: inline-block;
+     vertical-align: middle;
+     width: 1em;
+     height: 1em;
+     margin-left: 0.25rem;
+     fill: currentColor;
+}
+
+/* Responsive Styles */
+@media (min-width: 640px) { /* sm breakpoint */
+    .gallery-header {
+         font-size: 1.5rem; /* Equivalent to sm:text-2xl */
+    }
+    .main-image-container {
+         height: 20rem; /* Equivalent to sm:h-80 */
+    }
+}
+@media (min-width: 768px) { /* md breakpoint */
+     .main-image-container {
+         height: 24rem; /* Equivalent to md:h-96 */
+    }
+}
+ @media (min-width: 1024px) { /* lg breakpoint */
+     .main-image-container {
+         height: 31.25rem; /* Equivalent to lg:h-[500px] */
+    }
+}
