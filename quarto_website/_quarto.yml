@@ -3,6 +3,7 @@ project:
 
 website: 
   title: "30DayChartChallange"
+  favicon: star-of-life-solid.svg
 
 format:
   html:

@@ -1,7 +1,10 @@
+---
+title: 30DayChartChallenge 
+---
 ```{=html}
 <main>
         <div class="page-header">
-            <span class="main-title">30DayChartChallenge</span>
+            <span class="main-title">30<wbr>Day<wbr>Chart<wbr>Challenge</span>
             <span class="sub-title"><span class="gradient-year">Gallery ✴ 2025</span>
         </div>
 
@@ -316,7 +319,7 @@
 
 <footer>
     Made with Quarto and Gemini
-    by <a href="#" target="_blank" rel="noopener noreferrer">barreiro-r
+    by <a href="https://github.com/barreiro-r/30-day-chart-challenge" target="_blank" rel="noopener noreferrer">barreiro-r
     </a>
 </footer>
 
