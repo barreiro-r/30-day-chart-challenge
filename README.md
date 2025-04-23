@@ -2,6 +2,10 @@
 
 My submissions for the [#30DayChartChallenge](https://github.com/30DayChartChallenge). Mixing insight with aesthetics, caffeine optional but recommended.
 
+> [!IMPORTANT]  
+> 👉 Check out the full plot gallery on the website!
+> https://barreiro-r.github.io/30-day-chart-challenge/
+
 ## 2025 Edition 
 
 | Comparisons                                                          | Distributions                                             | Relationships          | Timeseries                                      | Uncertainties                           |
