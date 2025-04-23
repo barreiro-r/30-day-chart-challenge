@@ -1,0 +1,103 @@
+<script>
+    // Get references to elements
+    const mainImage = document.getElementById('mainImage');
+    const thumbnails = document.querySelectorAll('.thumbnail');
+
+    // Get references to museum card elements
+    const museumCard = document.getElementById('museumCard');
+    const cardAuthor = document.getElementById('cardAuthor');
+    const cardTitle = document.getElementById('cardTitle');
+    const cardDims = document.getElementById('cardDims');
+    const cardInfo = document.getElementById('cardInfo');
+    // Added references for link elements
+    const cardLinkParagraph = document.getElementById('cardLinkParagraph');
+    const cardLink = document.getElementById('cardLink');
+    const cardLinkText = document.getElementById('cardLinkText');
+
+
+    // Function to change the main image and update the museum card
+    function changeImage(thumbnailElement) {
+        const largeSrc = thumbnailElement.dataset.largeSrc || thumbnailElement.src;
+        const url = thumbnailElement.dataset.url; // Get the URL
+
+        mainImage.src = largeSrc;
+        mainImage.alt = thumbnailElement.alt;
+
+        cardAuthor.textContent = thumbnailElement.dataset.author || 'Unknown Author';
+        cardTitle.textContent = thumbnailElement.dataset.title || 'Untitled';
+        cardDims.textContent = thumbnailElement.dataset.dims || 'Dimensions N/A';
+        cardInfo.textContent = thumbnailElement.dataset.info || '';
+
+        // Update link visibility and href
+        if (url) {
+            cardLink.href = url;
+            // cardLinkText.textContent = "Source Link"; // Or keep default
+            cardLinkParagraph.style.display = 'block'; // Show the paragraph
+        } else {
+            cardLink.href = '#'; // Set a default href
+            cardLinkParagraph.style.display = 'none'; // Hide the paragraph
+        }
+
+
+        museumCard.style.display = 'block';
+
+        thumbnails.forEach(thumb => thumb.classList.remove('thumbnail-active'));
+        thumbnailElement.classList.add('thumbnail-active');
+
+        thumbnailElement.closest('.thumbnail-item').scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+
+    // --- Initialization ---
+    function initializeGallery() {
+        const firstThumbnail = thumbnails.length > 0 ? thumbnails[0] : null;
+        if (firstThumbnail) {
+             thumbnails.forEach(thumb => thumb.classList.remove('thumbnail-active'));
+             firstThumbnail.classList.add('thumbnail-active');
+             // Ensure cardAuthor exists before calling changeImage
+             if (cardAuthor && cardLinkParagraph && cardLink) {
+                changeImage(firstThumbnail);
+             } else {
+                 console.error("Initialization Error: Card elements not found.");
+                 museumCard.style.display = 'none';
+             }
+        } else {
+            mainImage.src = 'https://placehold.co/800x600/f87171/ffffff?text=No+Images+Found';
+            mainImage.alt = 'No images found';
+            museumCard.style.display = 'none';
+            if(cardLinkParagraph) cardLinkParagraph.style.display = 'none'; // Hide link if no images
+        }
+    }
+
+    // Add error handling for the main image
+    mainImage.onerror = function() {
+        console.error("Error loading main image:", this.src);
+        this.src = 'https://placehold.co/800x600/f87171/ffffff?text=Error+Loading+Image';
+        this.alt = 'Error loading image';
+         if (cardAuthor) cardAuthor.textContent = 'Error';
+         cardTitle.textContent = 'Could not load image';
+         cardDims.textContent = '';
+         cardInfo.textContent = '';
+         if(cardLinkParagraph) cardLinkParagraph.style.display = 'none'; // Hide link on error
+         museumCard.style.display = 'block';
+    };
+
+    // Add error handling for thumbnails
+    thumbnails.forEach(thumb => {
+        thumb.onerror = function() {
+            console.error("Error loading thumbnail:", this.src);
+            this.src = 'https://placehold.co/100x80/f87171/ffffff?text=Err';
+            this.style.opacity = '0.3';
+            this.style.cursor = 'not-allowed';
+            this.onclick = null;
+            const titleElement = this.previousElementSibling;
+            if (titleElement && titleElement.classList.contains('title')) {
+                titleElement.textContent = 'Error';
+                titleElement.style.color = '#ef4444';
+            }
+        };
+    });
+
+    // Initialize the gallery when the page loads
+    window.onload = initializeGallery;
+
+</script>

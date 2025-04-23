@@ -1,0 +1,323 @@
+```{=html}
+<main>
+        <div class="page-header">
+            <span class="main-title">30DayChartChallenge</span>
+            <span class="sub-title"><span class="gradient-year">Gallery ✴ 2025</span>
+        </div>
+
+
+        <div class="gallery-container">
+
+            <div class="main-image-container">
+                <img id="mainImage"
+                     src="https://placehold.co/800x600/cccccc/666666?text=Image+1"
+                     alt="Main display image"
+                     onerror="this.onerror=null; this.src='https://placehold.co/800x600/f87171/ffffff?text=Error+Loading';">
+            </div>
+
+            <div id="museumCard" class="museum-card">
+                <p><strong id="cardAuthor">Author Name</strong>, 2025</p>
+                <p id="cardTitle">Image Title</p>
+                <p id="cardDims">Dimensions</p>
+                <p id="cardInfo">Extra Info</p>
+                <p id="cardLinkParagraph" class="link-paragraph" style="display: none;"> <a id="cardLink" href="#" target="_blank" rel="noopener noreferrer">
+                        <span class="material-symbols-outlined">link</span> <span id="cardLinkText">R Code</span>
+                    </a>
+                </p>
+            </div>
+
+            <div class="thumbnail-groups-container">
+
+                <div class="thumbnail-row">
+                    <span class="week-label">Comparisons</span>
+                    <div class="thumbnail-group-scroll">
+                        <div class="thumbnail-item">
+                            <span class="title">01. Fractions</span>
+                            <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day01.png"
+                                 alt="Thumbnail Fractions"
+                                 class="thumbnail thumbnail-active" onclick="changeImage(this)"
+                                 data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day01.png"
+                                 data-author="Rodrigo Barreiro"
+                                 data-title="01. Fractions"
+                                 data-dims="800x600 px"
+                                 data-info="Data on pixels"
+                                 data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day01.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">02. Slope</span>
+                            <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day02.png"
+                                 alt="Thumbnail Slope"
+                                 class="thumbnail"
+                                 onclick="changeImage(this)"
+                                 data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day02.png"
+                                 data-author="Rodrigo Barreiro"
+                                 data-title="02. Slope"
+                                 data-dims="1024x768 px"
+                                 data-info="Data on pixels"
+                                 data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day02.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                             <span class="title">03. Circular</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day03.png"
+                                  alt="Thumbnail Circular"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day03.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="03. Circular"
+                                  data-dims="900x600 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day03.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                             <span class="title">04. Big or Small</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day04.png"
+                                  alt="Thumbnail Big or Small"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day04.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="04. Big or Small"
+                                  data-dims="700x700 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day04.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                             <span class="title">05. Ranking</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day05.png"
+                                  alt="Thumbnail Ranking"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day05.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="05. Ranking"
+                                  data-dims="1200x800 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day05.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                             <span class="title">06. F. Nightingale</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day06.png"
+                                  alt="Thumbnail Florence Nightingale"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day06.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="06. Florence Nightingale (theme day)"
+                                  data-dims="1200x800 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day06.qmd">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="thumbnail-row">
+                     <span class="week-label">Distributions</span>
+                     <div class="thumbnail-group-scroll">
+                        <div class="thumbnail-item">
+                            <span class="title">07. Outliers</span>
+                            <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day07.png"
+                                 alt="Thumbnail Outliers"
+                                 class="thumbnail"
+                                 onclick="changeImage(this)"
+                                 data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day07.png"
+                                 data-author="Rodrigo Barreiro"
+                                 data-title="07. Outliers"
+                                 data-dims="800x500 px"
+                                 data-info="Data on pixels"
+                                 data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/Day07 .qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">08. Histogram</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day08.png"
+                                  alt="Thumbnail Histogram"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day08.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="08. Histogram"
+                                  data-dims="1100x700 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day08.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">09. Diverging</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day09.png"
+                                  alt="Thumbnail Diverging"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day09.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="09. Diverging"
+                                  data-dims="900x900 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day09.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">10. Multi-modal</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day10.png"
+                                  alt="Thumbnail Multi-modal"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day10.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="10. Multi-modal"
+                                  data-dims="900x900 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day10.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">11. Stripes</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day11.png"
+                                  alt="Thumbnail Stripes"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day11.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="11. Stripes"
+                                  data-dims="900x900 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day11.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">12. Data.gov</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day12.png"
+                                  alt="Thumbnail Data.gov"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day12.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="12. Data.gov (data day)"
+                                  data-dims="900x900 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day12.qmd">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="thumbnail-row">
+                     <span class="week-label">Relationships</span>
+                     <div class="thumbnail-group-scroll">
+                        <div class="thumbnail-item">
+                            <span class="title">13. Clusters</span>
+                            <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day13.png"
+                                 alt="Thumbnail Clusters"
+                                 class="thumbnail"
+                                 onclick="changeImage(this)"
+                                 data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day13.png"
+                                 data-author="Rodrigo Barreiro"
+                                 data-title="13. Clusters"
+                                 data-dims="800x500 px"
+                                 data-info="Data on pixels"
+                                 data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day13.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">14. Kinship</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day14.png"
+                                  alt="Thumbnail Kinship"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day14.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="14. Kinship"
+                                  data-dims="1100x700 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day14.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">15. Complicated</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day15.png"
+                                  alt="Thumbnail Complicated"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day15.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="15. Complicated"
+                                  data-dims="900x900 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day15.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">16. Negative</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day16.png"
+                                  alt="Thumbnail Negative"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day16.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="16. Negative"
+                                  data-dims="900x900 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day16.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">17. Birds</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day17.png"
+                                  alt="Thumbnail Birds"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day17.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="17. Birds"
+                                  data-dims="900x900 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day17.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">18. El País</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day18.png"
+                                  alt="Thumbnail El Pais"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day18.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="18. El País (theme day)"
+                                  data-dims="900x900 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day18.qmd">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="thumbnail-row">
+                     <span class="week-label">Timeseries</span>
+                     <div class="thumbnail-group-scroll">
+                        <div class="thumbnail-item">
+                            <span class="title">19. Smooth</span>
+                            <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day19.png"
+                                 alt="Thumbnail Smooth"
+                                 class="thumbnail"
+                                 onclick="changeImage(this)"
+                                 data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day19.png"
+                                 data-author="Rodrigo Barreiro"
+                                 data-title="19. Smooth"
+                                 data-dims="800x500 px"
+                                 data-info="Data on pixels"
+                                 data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day19.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">20. Urbanization</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day20.png"
+                                  alt="Thumbnail Urbanization"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day20.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="20. Urbanization"
+                                  data-dims="1100x700 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day20.qmd">
+                        </div>
+                    </div>
+                </div>
+
+                </div>
+        </div> </main>
+
+<footer>
+    Made with Quarto and Gemini
+    by <a href="#" target="_blank" rel="noopener noreferrer">barreiro-r
+    </a>
+</footer>
+
+```

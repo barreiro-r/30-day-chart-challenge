@@ -1,0 +1,11 @@
+project:
+  type: default
+
+website: 
+  title: "30DayChartChallange"
+
+format:
+  html:
+    css: styles.css
+    include-in-header: my-header-scripts.html
+    include-after-body: my-footer-scripts.html
