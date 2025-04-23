@@ -39,7 +39,7 @@
                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day01.png"
                                  data-author="Rodrigo Barreiro"
                                  data-title="01. Fractions"
-                                 data-dims="800x600 px"
+                                 data-dims="1136×886 px"
                                  data-info="Data on pixels"
                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day01.qmd">
                         </div>
@@ -52,7 +52,7 @@
                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day02.png"
                                  data-author="Rodrigo Barreiro"
                                  data-title="02. Slope"
-                                 data-dims="1024x768 px"
+                                 data-dims="948×670 px"
                                  data-info="Data on pixels"
                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day02.qmd">
                         </div>
@@ -65,7 +65,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day03.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="03. Circular"
-                                  data-dims="900x600 px"
+                                  data-dims="884×770 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day03.qmd">
                         </div>
@@ -78,7 +78,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day04.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="04. Big or Small"
-                                  data-dims="700x700 px"
+                                  data-dims="1520×144 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day04.qmd">
                         </div>
@@ -91,7 +91,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day05.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="05. Ranking"
-                                  data-dims="1200x800 px"
+                                  data-dims="1090×636 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day05.qmd">
                         </div>
@@ -104,7 +104,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day06.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="06. Florence Nightingale (theme day)"
-                                  data-dims="1200x800 px"
+                                  data-dims="890×486 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day06.qmd">
                         </div>
@@ -123,7 +123,7 @@
                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day07.png"
                                  data-author="Rodrigo Barreiro"
                                  data-title="07. Outliers"
-                                 data-dims="800x500 px"
+                                 data-dims="1464×909 px"
                                  data-info="Data on pixels"
                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/Day07 .qmd">
                         </div>
@@ -136,7 +136,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day08.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="08. Histogram"
-                                  data-dims="1100x700 px"
+                                  data-dims="976×603 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day08.qmd">
                         </div>
@@ -149,7 +149,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day09.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="09. Diverging"
-                                  data-dims="900x900 px"
+                                  data-dims="1209×801 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day09.qmd">
                         </div>
@@ -162,7 +162,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day10.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="10. Multi-modal"
-                                  data-dims="900x900 px"
+                                  data-dims="808×546 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day10.qmd">
                         </div>
@@ -175,7 +175,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day11.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="11. Stripes"
-                                  data-dims="900x900 px"
+                                  data-dims="959×993 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day11.qmd">
                         </div>
@@ -188,7 +188,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day12.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="12. Data.gov (data day)"
-                                  data-dims="900x900 px"
+                                  data-dims="1118×1078 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day12.qmd">
                         </div>
@@ -207,7 +207,7 @@
                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day13.png"
                                  data-author="Rodrigo Barreiro"
                                  data-title="13. Clusters"
-                                 data-dims="800x500 px"
+                                 data-dims="1472×978 px"
                                  data-info="Data on pixels"
                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day13.qmd">
                         </div>
@@ -220,7 +220,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day14.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="14. Kinship"
-                                  data-dims="1100x700 px"
+                                  data-dims="714×718 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day14.qmd">
                         </div>
@@ -233,7 +233,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day15.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="15. Complicated"
-                                  data-dims="900x900 px"
+                                  data-dims="1691×1344 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day15.qmd">
                         </div>
@@ -246,7 +246,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day16.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="16. Negative"
-                                  data-dims="900x900 px"
+                                  data-dims="1296×1162 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day16.qmd">
                         </div>
@@ -259,7 +259,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day17.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="17. Birds"
-                                  data-dims="900x900 px"
+                                  data-dims="1500×1000 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day17.qmd">
                         </div>
@@ -272,7 +272,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day18.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="18. El País (theme day)"
-                                  data-dims="900x900 px"
+                                  data-dims="1000×800 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day18.qmd">
                         </div>
@@ -291,7 +291,7 @@
                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day19.png"
                                  data-author="Rodrigo Barreiro"
                                  data-title="19. Smooth"
-                                 data-dims="800x500 px"
+                                 data-dims="1106×806 px"
                                  data-info="Data on pixels"
                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day19.qmd">
                         </div>
@@ -304,7 +304,7 @@
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day20.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="20. Urbanization"
-                                  data-dims="1100x700 px"
+                                  data-dims="1300×1170 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day20.qmd">
                         </div>
