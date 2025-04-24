@@ -311,6 +311,19 @@ title: 30DayChartChallenge
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day20.qmd">
                         </div>
+                        <div class="thumbnail-item">
+                            <span class="title">21. Fossils</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day21.png"
+                                  alt="Thumbnail Fossils"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day21.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="21. Fossils"
+                                  data-dims="1082×882 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day21.qmd">
+                        </div>
                     </div>
                 </div>
 

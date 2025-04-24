@@ -1,0 +1,208 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 21 - Fossils
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(MetBrewer)
+library(lubridate)
+library(ggh4x)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 18, face = 'bold'),
+    plot.caption = element_text(size = 8, color = 'grey60',margin = margin(10,0,0,0)),
+    plot.subtitle = element_text(size = 11,lineheight = 1.15, margin = margin(0,0,15,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 10),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 10),
+    axis.text = element_markdown(family = "Chakra Petch", hjust = .5, size = 8, color = "grey70"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+
+### Preparing data for plot
+```{r}
+raw_data <- read_csv('2025/datasets/pbdb_data.csv') |>
+  janitor::clean_names() |> 
+  select(early_interval, late_interval, min_ma, max_ma, lng, lat, cc)
+```
+
+
+```{r}
+geological_periods <- tibble(
+  period = c(
+    "Cambrian",
+    "Ordovician",
+    "Silurian",
+    "Devonian",
+    "Carboniferous",
+    "Permian",
+    "Triassic",
+    "Jurassic",
+    "Cretaceous",
+    "Paleogene",
+    "Neogene"
+  ),
+  eras = c(
+    "Paleozoic",
+    "Paleozoic",
+    "Paleozoic",
+    "Paleozoic",
+    "Paleozoic",
+    "Paleozoic",
+    "Mesozoic",
+    "Mesozoic",
+    "Mesozoic",
+    "Cenozoic",
+    "Cenozoic"
+  ),
+  start_ma = c(
+    538.8,  # Start of Cambrian
+    485.4,  # Start of Ordovician
+    443.8,  # Start of Silurian
+    419.2,  # Start of Devonian
+    358.9,  # Start of Carboniferous
+    298.9,  # Start of Permian
+    251.9,  # Start of Triassic
+    201.4,  # Start of Jurassic
+    145.0,  # Start of Cretaceous
+    66.0,   # Start of Paleogene
+    23.03   # Start of Neogene
+  ),
+  end_ma = c(
+    485.4,  # End of Cambrian (= Start of Ordovician)
+    443.8,  # End of Ordovician (= Start of Silurian)
+    419.2,  # End of Silurian (= Start of Devonian)
+    358.9,  # End of Devonian (= Start of Carboniferous)
+    298.9,  # End of Carboniferous (= Start of Permian)
+    251.9,  # End of Permian (= Start of Triassic)
+    201.4,  # End of Triassic (= Start of Jurassic)
+    145.0,  # End of Jurassic (= Start of Cretaceous)
+    66.0,   # End of Cretaceous (= Start of Paleogene)
+    23.03,  # End of Paleogene (= Start of Neogene)
+    -1       # End of Neogene (= Present)
+  )
+)
+
+geological_periods <- 
+  geological_periods |>
+  mutate(mean_ma = (start_ma+end_ma)/2)
+```
+
+
+```{r}
+max_extintion_events <- tibble(
+  event = c(
+    "End Ordovician",
+    "Late Devonian",
+    "End Permian",
+    "End Triassic",
+    "End Cretaceus"
+  ),
+  ma = c(
+    444,
+    360,
+    250,
+    200,
+    65
+  )
+)
+```
+
+```{r}
+green_ramp <- colorRampPalette(c("#ba9791", "#ab3d35")) # Light Minty Green to Dark Forest Green
+greens <- green_ramp(6)
+blue_ramp <- colorRampPalette(c("#ebdbab", "#a38427")) # Light Sky Blue to Medium-Dark Blue
+blues <- blue_ramp(3)
+purple_ramp <- colorRampPalette(c("#7d6f65", "#523d2f")) # Light Lavender to Dark Purple
+purples <- purple_ramp(2)
+
+custom_palette_11 <- rev(c(greens, blues, purples))
+```
+
+
+```{r}
+
+my_breaks <- c(rev(geological_periods$end_ma), Inf)
+my_labels <- rev(geological_periods$period)
+names(custom_palette_11) <- my_labels
+
+raw_data |>
+  ggplot(aes(x = max_ma)) +
+
+  # Geometries
+  geom_segment(
+    data = max_extintion_events,
+    aes(x = ma, y = 0, yend = Inf),
+    color = 'grey90', linewidth = .45
+  ) +
+  geom_text(
+    data = max_extintion_events,
+    aes(x = ma, y = 80000, label = event),  
+    angle = 90, vjust = -0.3, size = 2.5, color = 'grey60'
+  ) +
+  geom_histogram(
+    aes(fill = after_stat(cut(
+      x,                          
+      breaks = my_breaks,         
+      labels = my_labels,         
+      right = TRUE,               
+      include.lowest = TRUE
+    ))),
+    bins = 90                    
+  ) +
+  geom_text(
+    data = {
+      geological_periods |> 
+        group_by(eras) |> 
+        summarise(mean_era = mean(mean_ma))
+    },
+    aes(x = mean_era, label = eras), 
+    y = -3000, size = 3
+  ) +
+  
+  # Scales
+  scale_fill_manual(values = custom_palette_11) +
+  scale_x_reverse(breaks = c(500, 400, 300, 200, 100, 0)) +
+  scale_y_continuous(label = scales::comma) +
+  
+  # Guides
+  guides(fill = 'none') +
+
+  # Labels
+  labs(
+    fill = 'Period',
+    x = "Million Years Ago (Mya)",
+    y = "Found Fossils",
+    title = "Found Fossils Ocurrence",
+    subtitle = "Vertical lines represents Mass Extinctions Events",
+    caption = "SOURCE Paleobiology Database"
+  )        
+
+```
