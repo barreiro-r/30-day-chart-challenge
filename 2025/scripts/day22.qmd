@@ -7,7 +7,7 @@ message: false
 ---
 
 # 30DayChartChallenge
-## Day 22 - Stars
+## Day 21 - Fossils
 
 ```{r setup}
 library(tidyverse)
@@ -35,10 +35,10 @@ theme_set(
     plot.title.position = "plot",
     plot.title = element_text(family = "Ubuntu", size = 18, face = 'bold'),
     plot.caption = element_text(size = 8, color = 'grey60',margin = margin(10,0,0,0)),
-    plot.subtitle = element_text(size = 10,lineheight = 1.15, margin = margin(0,0,15,0)),
-    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey70"),
-    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey70"),
-    axis.text = element_text(family = "Chakra Petch", hjust = .5, size = 8, color = "grey70"),
+    plot.subtitle = element_text(size = 11,lineheight = 1.15, margin = margin(0,0,15,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 10),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 10),
+    axis.text = element_markdown(family = "Chakra Petch", hjust = .5, size = 8, color = "grey70"),
     legend.position = "top",
     text = element_text(family = "Ubuntu"),
     plot.margin = margin(25, 25, 25, 25))
@@ -48,243 +48,69 @@ theme_set(
 
 ### Preparing data for plot
 ```{r}
-# --- Data extracted directly from table ---
-# thickness
-photosphere_thickness_km <- 500
-chromosphere_thickness_km <- 1600
-transition_zone_thickness_km <- 100
-
-# temperature
-photosphere_temp_start_k <- 8000
-photosphere_temp_end_k <- 4500 
-chromosphere_temp_start_k <- 4500
-chromosphere_temp_end_k <- 20000
-transition_zone_temp_start_k <- 20000
-transition_zone_temp_end_k <- 1e6
-corona_temp_start_k <- 1e6
-
-# --- Calculate Positions (km from base of Photosphere) ---
-
-photosphere_start_km <- 0
-photosphere_end_km <- photosphere_start_km + photosphere_thickness_km
-chromosphere_end_km <- photosphere_end_km + chromosphere_thickness_km
-transition_zone_end_km <- chromosphere_end_km + transition_zone_thickness_km
-corona_start_km <- transition_zone_end_km
-
-# --- Create the longer format Tibble representing boundaries ---
-sun_boundaries_long <- tibble(
-  boundary_layer = factor(c(
-    "Base Photosphere",
-    "Photosphere/Chromosphere",
-    "Chromosphere/Transition Zone",
-    "Transition Zone/Corona",
-    "Corona cut"
-  ), levels = c(
-    "Base Photosphere",
-    "Photosphere/Chromosphere",
-    "Chromosphere/Transition Zone",
-    "Transition Zone/Corona",
-    "Corona cut"
-  )),
-  position_km = c(
-    photosphere_start_km,
-    photosphere_end_km,
-    chromosphere_end_km,
-    transition_zone_end_km,
-    transition_zone_end_km + 1000
-  ),
-  temperature_k = c(
-    photosphere_temp_start_k,
-    photosphere_temp_end_k,
-    chromosphere_temp_end_k,
-    transition_zone_temp_end_k,
-    transition_zone_temp_end_k + 1000000
-  )
-)
+raw_data <- read_csv('2025/datasets/reviews_data.csv') |>
+  janitor::clean_names() 
 ```
 
 ```{r}
-create_angled_gradient <- function(colors, angle_deg) {
+data2plot <- 
+  raw_data |>
+  transmute(
+    rating = as.character(rating), 
+    year = as.numeric(str_replace(date,'.*, ',''))) |>
+  filter(rating != "N/A") |>
+  count(rating, year) |>
+  mutate(rating = as.numeric(rating)) |>
+  group_by(year) |>
+  arrange(rating, .by_group = TRUE) |>
+  mutate(
+    max_n = cumsum(n),        
+    min_n = max_n - n         
+  ) |>
+  ungroup() |>
+  select(year, rating, min_n, max_n) |>
+  mutate(rating_label = strrep("★", rating))
 
-  # Convert angle from degrees to radians
-  # Standard convention: 0 deg = right (+x), 90 deg = up (+y)
-  angle_rad <- angle_deg * pi / 180
+data2plot <- data2plot |>
+  mutate(rating_factor = factor(rating))
 
-  # Calculate the components of the direction vector (unit vector)
-  dx <- cos(angle_rad)
-  dy <- sin(angle_rad)
+star_label <- data2plot |>
+  distinct(rating_label) |>
+  pull(rating_label) |>
+  sort()
+names(star_label) <- data2plot |>
+  distinct(rating_factor) |>
+  pull(rating_factor) |>
+  sort()
 
-  # Calculate start and end points centered around (0.5, 0.5) NPC
-  # The vector goes from (0.5 - 0.5*direction) to (0.5 + 0.5*direction)
-  # This ensures the gradient line defined by the start/end points passes
-  # through the center of the NPC space (0.5, 0.5) with the correct angle.
-  # Scaling by 0.5 ensures the endpoints are typically within or near the
-  # 0-1 range for common angles, effectively defining the gradient across the space.
-  x1 <- 0.5 - 0.5 * dx
-  y1 <- 0.5 - 0.5 * dy
-  x2 <- 0.5 + 0.5 * dx
-  y2 <- 0.5 + 0.5 * dy
-
-  # Create the linear gradient object using NPC units
-  linearGradient(
-    colours = colors,
-    x1 = unit(x1, "npc"),
-    y1 = unit(y1, "npc"),
-    x2 = unit(x2, "npc"),
-    y2 = unit(y2, "npc")
-  )
-}
 ```
 
 ```{r}
-library(ggalt)
-library(grid)
-library(patchwork)
+png("2025/images/day22.png", type = "cairo", width = 2000, height = 1600, res = 300)
 
-p <- 
-  sun_boundaries_long |>
-  ggplot(aes(x = position_km, y = temperature_k)) +
-  geom_xspline(spline_shape = .3) +
-  geom_vline(
-    xintercept = photosphere_end_km,
-    color = 'grey80',
-    linetype = 'dotted'
-  ) +
-  annotate(
-    geom = 'text',
-    x = photosphere_end_km,
-    y = 10^3,
-    angle = 90,
-    label = str_c("Photosphere\n",scales::comma(photosphere_end_km),' km'),
-    color = 'grey80',
-    vjust = 0.5,
-    hjust = 0,
-    size = 2.5,
-  ) +
-  geom_vline(
-    xintercept = chromosphere_end_km - 100,
-    color = 'grey80',
-    linetype = 'dotted'
-  ) +
-  annotate(
-    geom = 'text',
-    x = chromosphere_end_km - 100,
-    y = 10^3,
-    angle = 90,
-    label = str_c("Chromosphere\n",scales::comma(chromosphere_end_km - 100),' km'),
-    color = 'grey80',
-    vjust = 0.5,
-    hjust = 0,
-    size = 2.5,
-  ) +
-  geom_vline(
-    xintercept = transition_zone_end_km + 100,
-    color = 'grey80',
-    linetype = 'dotted'
-  ) +
-  annotate(
-    geom = 'text',
-    x = transition_zone_end_km + 100,
-    y = 10^3,
-    angle = 90,
-    label = str_c("Transition Zone\n",scales::comma(transition_zone_end_km + 100),' km'),
-    color = 'grey40',
-    vjust = 0.5,
-    hjust = 0,
-    size = 2.5,
-  ) +
-  annotate(
-    geom = 'text',
-    x = transition_zone_end_km + 1000,
-    y = 10^3,
-    angle = 90,
-    label = "Corona",
-    color = 'grey80',
-    vjust = -.5,
-    hjust = 0,
-    size = 2.5,
-  ) +
-  annotate(
-    geom = 'text',
-    x = 0,
-    y = 10^3,
-    angle = 90,
-    label = "Surface\n0 km",
-    color = 'grey80',
-    vjust = 1,
-    lineheight = .8,
-    hjust = 0,
-    size = 2.5,
-  ) +
-  scale_y_log10(
-    expand = c(0,0,0,0),
-    labels = scales::trans_format("log10", scales::math_format(10^.x))) 
-
-
-built_p <- ggplot_build(p)
-spline_data <- built_p$data[[1]]
-highlight_data <- subset(spline_data, x >= 2100-100 & x <= 2200+100)
-
-grad_ungroup <- create_angled_gradient(c('white','#e30e3f'), 90)
-
-
-p +
-  geom_ribbon(
-    data = spline_data,
-    y = 0,
-    aes(x = x, ymin = 3300, ymax = 10^y),
-    fill = grad_ungroup,
-    alpha = .3
-  ) +
-  geom_xspline(spline_shape = .3, color = '#ffa8ba') +  
-  geom_path(
-    data = highlight_data,
-    aes(x = x, y = 10^y),
-    color = "#e30e3f",
-    linewidth = 1.5,
-    lineend = "round"
-  ) +
-  geom_point(
-    data = highlight_data |> filter(x == min(x)),
-    aes(x = x, y = 10^y),
-    color = "#e30e3f",
-    size = 2,
-  ) +
-  geom_point(
-    data = highlight_data |> filter(x == max(x)),
-    aes(x = x, y = 10^y),
-    color = "#e30e3f",
-    size = 2,
-  ) +
-  annotate(
-    geom = 'text',
-    label = '50×',
-    size = 16,
-    x = 2150,
-    y = 2*10^5,
-    hjust = 1.15,
-    family = 'Ubuntu',
-  ) +
-  annotate(
-    geom = 'text',
-    label = 'Temperature Increase',
-    color = 'grey40',
-    size = 3,
-    x = 1500,
-    y = 0.7 *10^5,
-    hjust = .5,
-    family = 'Ubuntu',
-    lineheight = .8,
+ggplot(data2plot, aes(y = year)) +
+  geom_point(aes(x = min_n, color = rating_factor), alpha = 0, shape = 19, size = 4) +
+  geom_segment(aes(x = min_n, xend = max_n, color = rating_factor), linewidth = 4, lineend = 'round', show.legend = FALSE) +
+  scale_x_continuous(expand = c(0.04, 0, 0.04, 0)) +
+  scale_y_continuous(breaks = seq(min(data2plot$year), max(data2plot$year), 1)) +
+  scale_color_manual(
+    labels = star_label,
+    values = rev(c("#1cb05a", "#92d3ad", "#F2C94C", "#F2994A", "#EB5757"))
   ) +
   labs(
-    x = 'Height above surface',
-    y = "Temperature K",
-    title = "Sun's Transition Zone",
-    subtitle = str_wrap("It consistis in very thin layer in the Sun's atmosphere, where The temperature increases dramatically over a very short distance, due magnetic waves and turbulence", width = 70),
-    caption = "SOURCE nasa.gov") +
+    title = "Starbucks Reviews",
+    subtitle = "I guess people review only when they are angry.",
+    x = "Reviews",
+    y = NULL,
+    color = NULL,
+    caption = "SOURCE Kaggle Starbucks Reviews Dataset"
+  ) +
+  guides(color = guide_legend(
+    override.aes = list(alpha = 1)
+  )) +
   theme(
-    axis.title.x = element_blank(),
-    axis.text.x = element_blank()
+    legend.position = 'bottom'
   )
-```
 
+dev.off()
+```

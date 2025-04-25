@@ -324,8 +324,7 @@ title: 30DayChartChallenge
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day21.qmd">
                         </div>
-                    </div>
-                    <div class="thumbnail-item">
+                        <div class="thumbnail-item">
                             <span class="title">22. Stars</span>
                              <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day22.png"
                                   alt="Thumbnail Stars"
@@ -334,9 +333,22 @@ title: 30DayChartChallenge
                                   data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day22.png"
                                   data-author="Rodrigo Barreiro"
                                   data-title="22. Stars"
-                                  data-dims="1084×940 px"
+                                  data-dims="2000×1600 px"
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day22.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">23. Log Scale</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day23.png"
+                                  alt="Thumbnail Log Scale"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day23.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="23. Log Scale"
+                                  data-dims="1084×940 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day23.qmd">
                         </div>
                     </div>
                 </div>
