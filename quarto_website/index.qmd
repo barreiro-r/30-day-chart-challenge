@@ -350,6 +350,19 @@ title: 30DayChartChallenge
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day23.qmd">
                         </div>
+                        <div class="thumbnail-item">
+                            <span class="title">24. World Health Organization (data day)</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day24.png"
+                                  alt="Thumbnail World Health Organization"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day24.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="24. World Health Organization"
+                                  data-dims="908×868 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day24.qmd">
+                        </div>
                     </div>
                 </div>
 

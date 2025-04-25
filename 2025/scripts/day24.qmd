@@ -1,0 +1,158 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 22 - Stars
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(MetBrewer)
+library(lubridate)
+library(ggh4x)
+library(showtext)
+
+font_add_google("Outfit", "outfit_thin", regular.wt = 200, bold.wt=300) # Add regular/bold if needed
+font_add_google("Ubuntu", "Ubuntu", regular.wt = 400, bold.wt=700) # Add regular/bold if needed
+showtext_auto()
+showtext_opts(dpi = 300)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 18, face = 'bold'),
+    plot.caption = element_text(size = 8, color = 'grey60',margin = margin(10,0,0,0)),
+    plot.subtitle = element_text(size = 10,lineheight = 1.15, margin = margin(0,0,15,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey70"),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey70"),
+    axis.text = element_text(family = "Ubuntu", hjust = .5, size = 8, color = "grey70"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+
+### Preparing data for plot
+```{r}
+raw_data <- readxl::read_xlsx('2025/datasets/who-tabacco.xlsx')
+```
+
+```{r}
+# indicator_name: Estimate of current cigarette smoking prevalence (%)
+spacing <- 2.7 # because of lineend round
+data2plot <- 
+  raw_data |>
+  filter(setting == "Brazil") |>
+  filter(indicator_abbr == "M_Est_cig_curr") |> 
+  transmute(
+    year = date,
+    sex = subgroup,
+    smoking_prevalence = estimate
+  ) |>
+  group_by(year) %>%
+  mutate(
+    female_prev_in_year = smoking_prevalence[sex == 'Female'],
+    y = case_when(
+      sex == 'Female' ~ 0,
+      sex == 'Male' ~ female_prev_in_year) + spacing,
+    yend = case_when(
+      sex == 'Female' ~ smoking_prevalence - spacing,
+      sex == 'Male' ~ female_prev_in_year + smoking_prevalence)
+  ) %>%
+  select(-female_prev_in_year) %>%
+  ungroup()
+
+total_smokers_start <- 
+  data2plot |> 
+  group_by(year) |> 
+  summarise(total_smokers = sum(smoking_prevalence)) |> 
+  ungroup() |>
+  filter(year == min(data2plot$year)) |> 
+  pull(total_smokers)
+
+total_smokers_end <- 
+  data2plot |> 
+  group_by(year) |> 
+  summarise(total_smokers = sum(smoking_prevalence)) |> 
+  ungroup() |>
+  filter(year == max(data2plot$year)) |> 
+  pull(total_smokers)
+
+reduction <- 
+   total_smokers_end / total_smokers_start
+
+reduction_label <- 
+  str_c(round(reduction * 100),"%")
+
+```
+
+```{r}
+library(ggsvg)
+library(magick)
+library(grid)
+library(svgparser)
+
+# Font Awesome Down Arrow
+svg_string_from_file <- '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M169.4 470.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 370.8 224 64c0-17.7-14.3-32-32-32s-32 14.3-32 32l0 306.7L54.6 265.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z"/></svg>'
+
+data2plot |>
+  ggplot(aes(x = as.character(year), y = y)) +
+  geom_segment(
+    data = data2plot |> filter(sex == "Male"),
+    aes(yend = yend, colour_m = smoking_prevalence), lwd = 9, lineend = 'round') +
+  geom_segment(
+    data = data2plot |> filter(sex == "Female"),
+    aes(yend = yend, colour_f = smoking_prevalence), lwd = 9, lineend = 'round') +
+  annotate(
+    geom = 'text',
+    y = 40,
+    label = reduction_label,
+    x = 8,
+    hjust = 1,
+    family = 'outfit_thin',
+    size = 20,
+  ) +
+  geom_point_svg(
+    data = tibble(x = 5, y = 42.5),
+    size = 5,
+    aes(x = x, y = y),
+    svg = svg_string_from_file
+  ) +
+  scale_y_continuous(limits = c(0,50), labels = function(x){str_c(x,"%")}) +
+  ggh4x::scale_colour_multi(
+    aesthetics = c("colour_m", "colour_f"),
+    name = list("Blue", "Pink"),
+    colours = list(
+        colorRampPalette(c('#8DA0DE',"#304eb0","#1f2d5b"))(10),
+        colorRampPalette(c('#D28285',"#a33851","#5c1e2d"))(10)
+    )) +
+  theme(legend.position = 'none') +
+  labs(
+    x = NULL,
+    y = NULL,
+    caption = "SOURCE World Health Organization",
+    title = 'Smokers in Brazil',
+    subtitle = "Estimate of current cigarette smoking prevalence segregated by sex.")
+
+```
+
