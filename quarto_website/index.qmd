@@ -366,6 +366,90 @@ title: 30DayChartChallenge
                     </div>
                 </div>
 
+                <div class="thumbnail-row">
+                     <span class="week-label">Uncertainties</span>
+                     <div class="thumbnail-group-scroll">
+                        <div class="thumbnail-item">
+                            <span class="title">25. Risk</span>
+                            <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day25.png"
+                                 alt="Thumbnail Risk"
+                                 class="thumbnail"
+                                 onclick="changeImage(this)"
+                                 data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day25.png"
+                                 data-author="Rodrigo Barreiro"
+                                 data-title="25. Risk"
+                                 data-dims="1106×806 px"
+                                 data-info="Data on pixels"
+                                 data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day25.qmd">
+                        </div>
+                        <!-- <div class="thumbnail-item">
+                            <span class="title">20. Urbanization</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day20.png"
+                                  alt="Thumbnail Urbanization"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day20.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="20. Urbanization"
+                                  data-dims="1300×1170 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day20.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">21. Fossils</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day21.png"
+                                  alt="Thumbnail Fossils"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day21.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="21. Fossils"
+                                  data-dims="1082×882 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day21.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">22. Stars</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day22.png"
+                                  alt="Thumbnail Stars"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day22.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="22. Stars"
+                                  data-dims="2000×1600 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day22.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">23. Log Scale</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day23.png"
+                                  alt="Thumbnail Log Scale"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day23.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="23. Log Scale"
+                                  data-dims="1084×940 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day23.qmd">
+                        </div>
+                        <div class="thumbnail-item">
+                            <span class="title">24. World Health Organization (data day)</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day24.png"
+                                  alt="Thumbnail World Health Organization"
+                                  class="thumbnail"
+                                  onclick="changeImage(this)"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day24.png"
+                                  data-author="Rodrigo Barreiro"
+                                  data-title="24. World Health Organization"
+                                  data-dims="908×868 px"
+                                  data-info="Data on pixels"
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day24.qmd">
+                        </div>
+                    </div> -->
+                </div>
+
                 </div>
         </div> </main>
 

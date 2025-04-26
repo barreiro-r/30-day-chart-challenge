@@ -1,0 +1,292 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 25 - Risk
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(MetBrewer)
+library(lubridate)
+library(ggh4x)
+library(showtext)
+
+font_add_google("Outfit", "outfit_thin", regular.wt = 200, bold.wt=300) # Add regular/bold if needed
+font_add_google("Ubuntu", "Ubuntu", regular.wt = 400, bold.wt=700) # Add regular/bold if needed
+showtext_auto()
+showtext_opts(dpi = 300)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 18, face = 'bold',),
+    plot.caption = element_text(size = 8, color = 'grey60',margin = margin(20,0,0,0)),
+    plot.subtitle = element_text(size = 9,lineheight = 1.15, margin = margin(5,0,15,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    axis.text = element_text(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+
+### Preparing data for plot
+```{r}
+raw_data <- bind_rows(
+  tibble(
+    prs = rnorm(800,0,1),
+    group = 'control'),
+  tibble(
+    prs = rnorm(200,.9,1),
+    group = 'case')
+  )
+```
+
+```{r}
+library(grid)
+create_angled_gradient <- function(colors, angle_deg) {
+
+  # Convert angle from degrees to radians
+  # Standard convention: 0 deg = right (+x), 90 deg = up (+y)
+  angle_rad <- angle_deg * pi / 180
+
+  # Calculate the components of the direction vector (unit vector)
+  dx <- cos(angle_rad)
+  dy <- sin(angle_rad)
+
+  x1 <- 0.5 - 0.5 * dx
+  y1 <- 0.5 - 0.5 * dy
+  x2 <- 0.5 + 0.5 * dx
+  y2 <- 0.5 + 0.5 * dy
+
+  # Create the linear gradient object using NPC units
+  linearGradient(
+    colours = colors,
+    x1 = unit(x1, "npc"),
+    y1 = unit(y1, "npc"),
+    x2 = unit(x2, "npc"),
+    y2 = unit(y2, "npc")
+  )
+}
+```
+
+```{r}
+my_colors <- c(case = '#5974cf', control  ='grey80')
+
+my_cutoffs <- 
+  tibble(
+    x_quantile = c(quantile(raw_data$prs, p = .95),quantile(raw_data$prs, p = .05)),
+    risk = c('high','low')
+  )
+
+
+p1 <- 
+raw_data |>
+  ggplot(aes(x = prs)) +
+  annotate(
+    geom = 'rect',
+    ymin = 0, ymax = 50,
+    xmin = my_cutoffs |> filter(risk == 'high') |> pull(x_quantile),
+    xmax = Inf,
+    fill = create_angled_gradient(colors = c('#aebae0','white'), angle_deg = 180)
+  ) +
+  annotate(
+    geom = 'rect',
+    ymin = 0, ymax = 50,
+    xmin = -Inf,
+    xmax = my_cutoffs |> filter(risk == 'low') |> pull(x_quantile),
+    fill = create_angled_gradient(colors = c('grey90','white'), angle_deg = 0)
+  ) +
+  geom_segment(
+    data = my_cutoffs,
+    aes(x = x_quantile),
+    y = 0, yend = 35,
+    color = 'grey80',
+    linewidth = .3
+  ) +
+  geom_dotplot(
+    aes(fill = group, color = group),
+    group = 1,
+    color = 'white',
+    binwidth=0.13,
+    method='histodot',
+    binpositions = "all",
+    stackgroups=TRUE,
+    dotsize = .8) +
+  geom_text(
+    data = my_cutoffs |> filter(risk == 'high'),
+    aes(x = x_quantile),
+    y = 50,
+    hjust = 1.15,
+    size = 3,
+    color = '#8DA0DE',
+    label = '95th percentile',
+    angle = 90
+  ) +
+  geom_text(
+    data = my_cutoffs |> filter(risk == 'low'),
+    aes(x = x_quantile),
+    y = 50,
+    hjust = 1.15,
+    size = 3,
+    color = 'grey70',
+    label = '5th percentile',
+    angle = 90
+  ) +
+  scale_y_continuous(
+    expand = c(0,0,0,0),
+    limits = c(0,50),
+    breaks = scales::pretty_breaks(n = min(50, 10))) +
+  scale_fill_manual(
+    values = my_colors
+  ) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank(),
+    legend.position = 'none',
+    legend.background = element_rect_round(radius = unit(2, "snpc"))
+  ) +
+  labs(
+    x = "Polygenic Risk Score",
+    title = 'Polygenic Risk Score',
+    subtitle = str_wrap("Polygenic Risk Scores (PRS) quantify each individual's cumulative genetic risk for a trait by combining the effects of many genetic variants. Higher PRS means higher change of developing the trait (e.g. disease)."), width = 80)
+```
+
+```{r}
+create_semi_star_tibble <- function(n, len = 1, inner_ratio = 0) {
+
+  # --- Input Validation ---
+  # Check if n is a single positive integer
+  if (!is.numeric(n) || length(n) != 1 || n < 1 || floor(n) != n) {
+    stop("Input 'n' must be a single integer greater than or equal to 1.")
+  }
+  # Check if len is a single positive number
+  if (!is.numeric(len) || length(len) != 1 || len <= 0) {
+    stop("Input 'len' must be a single positive number.")
+  }
+  # Check if inner_ratio is a single number between 0 and 1
+  if (!is.numeric(inner_ratio) || length(inner_ratio) != 1 || inner_ratio < 0 || inner_ratio > 1) {
+    stop("Input 'inner_ratio' must be a single number between 0 and 1 (inclusive).")
+  }
+
+  # --- Angle Calculation ---
+  # Handle the edge case n = 1 separately
+  if (n == 1) {
+    angles <- 0
+  } else {
+    # Generate n angles equally spaced from 0 to pi (180 degrees)
+    angles <- seq.int(from = 0, to = pi, length.out = n)
+  }
+
+  # --- Coordinate Calculation ---
+  # Calculate the coordinates of the outer endpoints (relative to the origin)
+  x_outer <- len * cos(angles)
+  y_outer <- len * sin(angles)
+
+  # Calculate the coordinates of the inner starting points
+  # These points lie on the line from the origin to the outer points,
+  # at a distance proportional to inner_ratio.
+  x_start <- inner_ratio * x_outer
+  y_start <- inner_ratio * y_outer
+
+  # The end coordinates are the outer points calculated earlier
+  x_end <- x_outer
+  y_end <- y_outer
+
+  # --- Create Tibble ---
+  # Combine the start and end coordinates into a tibble
+  star_tibble <- tibble::tibble(
+    x = x_start,      # Start x-coordinate
+    y = y_start,      # Start y-coordinate
+    xend = x_end,     # End x-coordinate
+    yend = y_end      # End y-coordinate
+  )
+
+  # Return the resulting tibble
+  return(star_tibble)
+}
+```
+
+```{r}
+risk_labeller <- function(x) {
+  paste("Cases at", x,'(%)')
+}
+
+my_ratios <- 
+  bind_rows(
+    raw_data |>
+      filter(prs > my_cutoffs |> filter(risk == 'high') |> pull(x_quantile)) |>
+      count(group) |>
+      pivot_wider(names_from = group, values_from = n) |>
+      mutate(risk = 'high', quantile = '95th'),
+    raw_data |>
+      filter(prs < my_cutoffs |> filter(risk == 'low') |> pull(x_quantile)) |>
+      count(group) |>
+      pivot_wider(names_from = group, values_from = n) |>
+      mutate(risk = 'low', quantile = '05th')) |>
+  mutate(case_percentage = case / (case + control)) 
+
+high_risk_case_p <- my_ratios |> filter(risk == 'high') |> pull(case_percentage)
+low_risk_case_p <- my_ratios |> filter(risk == 'low') |> pull(case_percentage)
+
+data2plot2 <- bind_rows(
+  create_semi_star_tibble(n = 50,inner_ratio = .7) |>
+    mutate(group = rev(c(rep('case',round(50 * high_risk_case_p)), rep('control',round(50 * (1- high_risk_case_p)))))) |>
+    mutate(quantile = '95th'),
+  create_semi_star_tibble(n = 50,inner_ratio = .7) |>
+    mutate(group = rev(c(rep('case',round(50 * low_risk_case_p)), rep('control',round(50 * (1- low_risk_case_p)))))) |>
+    mutate(quantile = '05th'))
+
+p2 <- 
+  data2plot2 |>  
+  ggplot() +
+  geom_segment(aes(x = x, xend = xend, y = y, yend = yend, color = group)) +
+  geom_text(
+    data = my_ratios, 
+    aes(label = str_c(round(case_percentage*100),"%")),
+    x = 0, y = 0, 
+    vjust = -.35,
+    size = 8,
+    color = 'grey40',
+    family = 'outfit_thin') +
+  coord_fixed() +
+  facet_wrap(~quantile, labeller = labeller(quantile = risk_labeller), strip.position = "bottom") +
+  scale_color_manual(values = my_colors) +
+  theme_void() +
+  theme(
+    legend.position = 'none',
+    strip.placement = "outside",
+    strip.text = element_text(colour = "grey60", margin = margin(t = 5, r = 0, b = 0, l = 0, unit = "pt")),
+    panel.spacing = unit(1.5, "lines"),
+    plot.caption = element_text(size = 8, color = 'grey60',margin = margin(20,0,0,0)),
+    plot.margin = margin(t = 0, r = , b = 25, l = 0 )) 
+  
+```
+
+```{r}
+cowplot::plot_grid(p1, p2, ncol = 1, rel_heights = c(4,1))
+
+```
