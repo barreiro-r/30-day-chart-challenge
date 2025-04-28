@@ -395,20 +395,20 @@ title: 30DayChartChallenge
                                   data-info="Data on pixels"
                                   data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day26.qmd">
                         </div>
-                        <!-- 
                         <div class="thumbnail-item">
-                            <span class="title">21. Fossils</span>
-                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day21.png"
-                                  alt="Thumbnail Fossils"
+                            <span class="title">27. Noise</span>
+                             <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day27.png"
+                                  alt="Thumbnail Noise"
                                   class="thumbnail"
                                   onclick="changeImage(this)"
-                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day21.png"
+                                  data-large-src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day27.png"
                                   data-author="Rodrigo Barreiro"
-                                  data-title="21. Fossils"
+                                  data-title="27. Noise"
                                   data-dims="1082×882 px"
                                   data-info="Data on pixels"
-                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day21.qmd">
+                                  data-url="https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2025/scripts/day27.qmd">
                         </div>
+                        <!-- 
                         <div class="thumbnail-item">
                             <span class="title">22. Stars</span>
                              <img src="https://github.com/barreiro-r/30-day-chart-challenge/raw/main/2025/images/day22.png"

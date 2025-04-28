@@ -1,0 +1,167 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 25 - Risk
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(MetBrewer)
+library(lubridate)
+library(ggh4x)
+library(showtext)
+
+font_add_google("Outfit", "outfit_thin", regular.wt = 200, bold.wt=300) # Add regular/bold if needed
+font_add_google("Ubuntu", "Ubuntu", regular.wt = 400, bold.wt=700) # Add regular/bold if needed
+showtext_auto()
+showtext_opts(dpi = 300)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 18, face = 'bold',),
+    plot.caption = element_text(size = 8, color = 'grey60',margin = margin(20,0,0,0)),
+    plot.subtitle = element_text(size = 9,lineheight = 1.15, margin = margin(5,0,15,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    axis.text = element_text(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+
+### Preparing data for plot
+```{r}
+raw_data <- 
+  read_csv('2025/datasets/seawater-ph.csv') |>
+  janitor::clean_names()
+```
+
+```{r}
+library(slider)
+
+data2plot <- 
+  raw_data |>
+  rename(
+    monthly_ph = 'monthly_measurement_of_ocean_p_h_levels',
+    rolling_year_ph = 'rolling_yearly_average_of_ocean_p_h_levels') |>
+  select(-entity,-code,-rolling_year_ph) 
+
+data2plot <- 
+  data2plot |>
+  mutate(
+    rolling_mean_ph_2yr = slide_index_dbl(
+      .x = monthly_ph,                   # The column to calculate the mean from
+      .i = day,          # The date column to define the window
+      .f = ~mean(.x, na.rm = TRUE),    # The function to apply (mean, removing NAs within the window)
+      .before = years(2),              # Define the window size: go back 3 years from the current date
+    ))
+
+
+
+data2plot <- 
+  data2plot |>
+  pivot_longer(cols = c(monthly_ph, rolling_mean_ph_2yr), names_to = 'measure', values_to = 'ph_value')
+```
+
+```{r}
+library(ggalt)
+
+palette_colors <- c(
+  '#8a14de',"#1bde14"
+)
+
+
+grid_labels_in_plot <- 
+  tibble(y = pretty_breaks(n = 3)(data2plot$ph_value))
+
+data2plot |>
+  ggplot(aes(x = day, y = ph_value)) +
+  geom_hline(
+    data = grid_labels_in_plot, 
+    aes(yintercept = y), color = "#edf1fc") +
+  geom_text(data = grid_labels_in_plot, 
+    aes(label = y, y = y), x = min(data2plot$day) - 2000,
+    vjust = -.5, hjust = 0, size = 2,
+    color = '#aebae0') +
+  
+
+  geom_line(data = subset(data2plot, measure == 'monthly_ph'), color = '#aebae0') +
+  geom_line(
+    data = subset(data2plot, measure == 'rolling_mean_ph_2yr'),
+    aes(group = 1, color = ph_value),
+    linewidth = 1.5,
+    lineend='round') +
+  
+  geom_segment(
+    data = tibble(x = min(data2plot$day) - 400, xend = min(data2plot$day) + 400, y = 8.15),
+    aes(x = x, xend = xend, y = y), 
+    size = 8,
+    lineend = 'round',
+    color = '#8a14de') +
+  geom_text(
+    data = tibble(x = min(data2plot$day) - 400, xend = min(data2plot$day) + 400, y = 8.15),
+    aes(x = x + 400 , y = y), 
+    size = 3,
+    color = 'white',
+    label = round(digits = 2, data2plot |> filter(day == min(data2plot$day), measure == 'rolling_mean_ph_2yr') |> pull(ph_value))) +
+
+  geom_segment(
+    data = tibble(x = max(data2plot$day) - 400, xend = max(data2plot$day) + 400, y = 8.075),
+    aes(x = x, xend = xend, y = y), 
+    size = 8,
+    lineend = 'round',
+    color = '#08ba02') +
+  geom_text(
+    data = tibble(x = max(data2plot$day) - 400, xend = max(data2plot$day) - 400, y = 8.075),
+    aes(x = x + 400 , y = y), 
+    size = 3,
+    color = 'white',
+    label = round(digits = 2, data2plot |> filter(day == max(data2plot$day), measure == 'rolling_mean_ph_2yr') |> pull(ph_value))) +
+
+
+  scale_color_gradientn(colors = rev(palette_colors)) +
+  scale_x_date(
+    label = year, 
+    limits = c(min(data2plot$day) - 2000,max(data2plot$day) + 2000),
+    expand = c(0,0,0,0),
+    breaks = c(
+      min(data2plot$day),
+      max(data2plot$day)
+    )) +
+  guides(color = 'none') +
+  labs(
+    x = NULL,
+    y = 'pH Levels',
+    title = "Mean Seawater pH in Hawaii",
+    subtitle = str_wrap("This dataset shows an example of ocean acidification, where the ocean’s pH decreases over time due to increased carbon dioxide absorption, harming marine life and ecosystems.", width = 80),
+    caption = str_wrap('SOURCE School of Ocean & Earth Science & Technology - Hawaii Ocean Time-series (2024) – with major processing by Our World in Data', width = 90)
+  ) +
+  theme(
+    axis.text.y = element_blank()
+  )
+
+
+```
