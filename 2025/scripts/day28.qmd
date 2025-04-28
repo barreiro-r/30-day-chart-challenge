@@ -1,0 +1,251 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 28 - Inclusion
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(MetBrewer)
+library(lubridate)
+library(ggh4x)
+library(showtext)
+
+font_add_google("Outfit", "outfit_thin", regular.wt = 200, bold.wt=300) # Add regular/bold if needed
+font_add_google("Ubuntu", "Ubuntu", regular.wt = 400, bold.wt=700) # Add regular/bold if needed
+showtext_auto()
+showtext_opts(dpi = 300)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    # plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 18, face = 'bold'),
+    plot.caption = element_text(size = 8, color = 'grey60',margin = margin(20,0,0,0)),
+    plot.subtitle = element_text(size = 9,lineheight = 1.15, margin = margin(5,0,15,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    axis.text = element_text(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+
+### Read raw data
+```{r}
+
+raw_data <- 
+  read_csv('2025/datasets/countries-by-legal-status-of-same-sex-marriage.csv')
+
+```
+
+
+### Preparing data for plot
+```{r}
+data2plot <- 
+  raw_data |> 
+  janitor::clean_names() |>
+  filter(entity == "World") |>
+  select(-entity, -code) |>
+  pivot_longer(cols = -year, names_to = 'measure', values_to = 'values') |>
+  mutate(measure = case_when(
+    str_detect(measure, '_ban')  ~ 'banned',
+    str_detect(measure, '_legal_number')  ~ 'legal',
+    TRUE ~ "other"
+  )) |>
+  group_by(year, measure) |>
+  summarise(values = sum(values)) |>
+  ungroup() |>
+  group_by(year) |>
+  mutate(percent = values / sum(values)) |>
+  ungroup() |>
+  filter(measure != 'other') |>
+  mutate(y = case_when(
+    measure == 'legal' ~ 0,
+    measure == 'banned' ~ 1 - percent,
+  ),yend = case_when(
+    measure == 'legal' ~ percent,
+    measure == 'banned' ~ 1,
+  ))
+```
+
+```{r}
+background_bars <- 
+  data2plot |>
+  select(year) |>
+  distinct(year) |>
+  mutate(y = 0, yend = 1)
+
+data2_geom_line <- 
+  bind_rows(
+    data2plot |>
+      filter(measure == 'legal') |>
+      transmute(year = year, y = y, group = 'start'),
+    data2plot |>
+      filter(measure == 'legal') |>
+      transmute(year = year, y = yend, group = 'start')
+  )
+
+alpLow <- seq(from = 0, to = 1, length.out = 150)
+alpHigh <- rev(alpLow)
+alp <- c(alpLow, alpHigh)
+
+progress_palette <- c(
+  "red" = "#E40303",
+  "orange" = "#FF8C00",
+  "yellow" = "#FFED00",
+  "green" = "#008026",
+  "blue" = "#004CFF",
+  "purple" = "#732982",
+  "pink" = "#FFAFC8",
+  "white" = "#FFFFFF",
+  "light_blue" = "#74D7EE",
+  "brown" = "#613915",
+  "black" = "#000000"
+)
+
+grid_labels_in_plot <- 
+  tibble(x = pretty_breaks(n = 4)(c(0,1)))
+
+data2plot |>
+  ggplot(aes(y = year)) +
+  geom_segment(
+    data = background_bars, 
+    aes(x = y, xend = yend),
+    size = 1,
+    lineend = 'round',
+    color = '#edf1fc',
+    alpha = .9) +
+  geom_segment(
+    data = grid_labels_in_plot,
+    size = .25,
+    color = '#aebae0',
+    aes(x = x, xend = x,
+    y = min(data2plot$year), yend = max(data2plot$year))
+  ) +
+
+  annotate(
+    geom = 'text',
+    label = '40%',
+    x = .4,
+    y = min(data2plot$year)-5,
+    size = 2.5,
+    color = '#aebae0',
+    angle = 280) +
+  annotate(
+    geom = 'text',
+    label = '20%',
+    x = .2,
+    y = min(data2plot$year)-5,
+    size = 2.5,
+    color = '#aebae0',
+    angle = 320) +
+  annotate(
+    geom = 'text',
+    label = '60%',
+    x = .6,
+    y = min(data2plot$year)-5,
+    size = 2.5,
+    color = '#aebae0',
+    angle = 70) +
+  annotate(
+    geom = 'text',
+    label = '80%',
+    x = .8,
+    y = min(data2plot$year)-5,
+    size = 2.5,
+    color = '#aebae0',
+    angle = 40) +
+
+  annotate(
+    geom = 'text',
+    y = 2005,
+    label = 'Legal',
+    x = -0.01, color = "#304eb0", size = 2.5,
+    vjust = 1
+  ) +
+  annotate(
+    geom = 'text',
+    y = 2005,
+    label = 'Banned',
+    x = 1.01, color = "#304eb0", size = 2.5,
+    vjust = 1
+  ) +
+
+
+  geom_segment(
+    data = subset(data2plot, measure == 'banned'), 
+    aes(x = y, xend = yend),
+    size = 1,
+    lineend = 'round',
+    color = 'black') +
+  geom_segment(
+    data = subset(data2plot, measure == 'legal'), 
+    aes(x = y, xend = yend, yend = year, color = year, group = year),
+    size = 1,
+    lineend = 'round',
+    ) +
+  geom_text(
+    data = data2plot |> filter(measure == 'legal', year == min(year)),
+    aes(y = year, label = year),
+    x = 0, color = "#aebae0", size = 2.5,
+    hjust = 0, vjust = 1.7, angle = 90,
+  ) +
+  geom_text(
+    data = data2plot |> filter(measure == 'legal', year == max(year)),
+    aes(y = year, label = year),
+    x = 0, color = "#aebae0", size = 2.5,
+    hjust = 0, vjust = -.7, angle = 90,
+  ) +
+  scale_color_gradientn(colors = rev(progress_palette)) +
+  scale_x_continuous(expand = c(0,0)) +
+  scale_y_continuous(expand = c(.7,0,0,0)) +
+  coord_radial(start = -0.5 * pi, end = 0.5 * pi) +
+  guides(color = 'none') +
+  theme(
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank()
+  ) +
+  labs(
+    title = "Love Wins... and Loses?",
+    subtitle = str_wrap("A global view showing that between 1991 and 2019, both that the percentage of countries with legalization or the explicit banning of same-sex marriage have become more prevalent.", width = 80)
+  )
+
+
+  # ggforce::geom_link(
+  #   data = data2plot |> filter(measure == 'legal'), 
+  #   aes(x = y, xend = yend, yend = year, color = yend, group = year),
+  #   size = 2,
+  #   lineend = 'round',
+  #   ) +
+
+# ggforce::geom_link2(
+#     data = data2_geom_line, 
+#     aes(x = y, color = y, group = year),
+#     size = 2,
+#     lineend = 'round',
+#     ) +
+```
