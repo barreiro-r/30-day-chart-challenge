@@ -1,0 +1,239 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 26 - Monochrome
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(MetBrewer)
+library(lubridate)
+library(showtext)
+
+font_add_google("Barlow Condensed", "barlow_cond", regular.wt = 400, bold.wt=600) # Add regular/bold if needed
+font_add_google("Ubuntu", "Ubuntu", regular.wt = 400, bold.wt=700) # Add regular/bold if needed
+showtext_auto()
+showtext_opts(dpi = 300)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 18, face = 'bold',),
+    plot.caption = element_text(size = 8, color = 'grey60',margin = margin(20,0,0,0)),
+    plot.subtitle = element_text(size = 9,lineheight = 1.15, margin = margin(5,0,15,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    axis.text = element_text(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+
+### Function to create the base of the plot
+```{r}
+create_rect_tibble <- function(n, width, spacing) {
+  # --- Input Validation ---
+  # Ensure n is a single positive integer
+  if (!is.numeric(n) || length(n) != 1 || n <= 0 || floor(n) != n) {
+    stop("Error: `n` must be a single positive integer.")
+  }
+  # Ensure width is a single non-negative number
+  if (!is.numeric(width) || length(width) != 1 || width < 0) {
+    stop("Error: `width` must be a single non-negative number.")
+  }
+  # Ensure spacing is a single number
+  if (!is.numeric(spacing) || length(spacing) != 1) {
+    stop("Error: `spacing` must be a single number.")
+  }
+
+  # --- Calculation ---
+  if (n == 0) {
+    return(tibble(xmin = numeric(0), xmax = numeric(0), ymin = numeric(0), ymax = numeric(0)))
+  }
+
+  
+  idx <- 0:(n - 1)
+  xmin_vals <- idx * (width + spacing)
+  xmax_vals <- xmin_vals + width
+
+  # --- Create Tibble ---
+  result <- tibble::tibble(
+    xmin = xmin_vals,
+    xmax = xmax_vals,
+    ymin = 0,
+    ymax = 1
+  )
+
+  return(result)
+}
+```
+
+### To get the calculated percente of full plot
+```{r}
+filter_rect_tibble <- function(percentage, rect_tibble) {
+
+  # --- Input Validation ---
+  if (!is.numeric(percentage) || length(percentage) != 1 || percentage < 0 || percentage > 1) {
+    stop("Error: `percentage` must be a single number between 0 and 1 (inclusive).")
+  }
+  if (!is.data.frame(rect_tibble)) {
+     stop("Error: `rect_tibble` must be a data frame or tibble.")
+  }
+  required_cols <- c("xmin", "xmax", "ymin", "ymax")
+  if (!all(required_cols %in% names(rect_tibble))) {
+     stop(paste("Error: `rect_tibble` must have columns:", paste(required_cols, collapse=", ")))
+  }
+
+  # --- Core Logic ---
+  n_total <- nrow(rect_tibble)
+
+  # Handle edge cases: 0% percentage or empty input tibble
+  if (percentage == 0 || n_total == 0) {
+    return(rect_tibble |> slice(0))
+  }
+
+  if (percentage == 1) {
+    return(rect_tibble) # Return original tibble
+  }
+
+  # Calculate target "units" (can be fractional number of rows)
+  target_units <- n_total * percentage
+  num_full_rows <- floor(target_units)
+
+  # Determine the fraction of the next row needed (if any)
+  # Use a small tolerance to handle potential floating point inaccuracies
+  # e.g., target_units might be 1.9999999999999998 when it should be 2
+  epsilon <- .Machine$double.eps ^ 0.5 # A standard tolerance
+  partial_fraction <- target_units - num_full_rows
+  if (abs(partial_fraction) < epsilon) {
+      partial_fraction <- 0 # Treat as effectively zero if very close
+  }
+
+  # Get the full rows
+  if (num_full_rows > 0) {
+    full_rows_tibble <- rect_tibble |> slice(1:num_full_rows)
+  } else {
+    # If num_full_rows is 0, start with an empty tibble structure
+    full_rows_tibble <- rect_tibble |> slice(0)
+  }
+
+  # Handle the partial row, if necessary
+  partial_row_tibble <- rect_tibble |> slice(0) # Initialize as empty
+  if (partial_fraction > 0) {
+    # Index of the row to be partially included
+    partial_row_index <- num_full_rows + 1
+
+    # Check if this index is valid (it should be unless target_units was exactly n_total)
+    if (partial_row_index <= n_total) {
+      # Get the specific row
+      partial_row <- rect_tibble |> slice(partial_row_index)
+
+      # Calculate the original width of this specific row
+      # Ensure width is not zero to avoid division by zero or NaN issues,
+      # though create_rect_tibble prevents width < 0.
+      original_width <- partial_row$xmax - partial_row$xmin
+
+      if (original_width > 0) {
+          # Calculate the new width based on the fraction
+          new_partial_width <- original_width * partial_fraction
+          # Calculate the new xmax value
+          new_xmax <- partial_row$xmin + new_partial_width
+      } else {
+          # If original width is 0, the new xmax is just xmin
+          new_xmax <- partial_row$xmin
+      }
+
+
+      # Modify the row by updating xmax (creates a new 1-row tibble)
+      partial_row_tibble <- partial_row |>
+        mutate(xmax = new_xmax)
+    }
+  }
+
+  # Combine the full rows and the (potentially modified) partial row
+  result_tibble <- bind_rows(full_rows_tibble, partial_row_tibble)
+
+  return(result_tibble)
+}
+
+```
+
+
+### Time to Plot
+```{r}
+# Data from: https://www.painelsaneamento.org.br/
+percent_of_brazilian_wo_water <- .158
+
+percent_label = str_c(round(.158 * 100),"%")
+plot_text = 'of Brazil’s population lacks access to water. That’s nearly 1 in 6 people. 32 million lives affected.'
+
+my_data <- create_rect_tibble(n = 10, width = 0.9, spacing = 0.1)
+data2plot <- filter_rect_tibble(my_data, percentage = percent_of_brazilian_wo_water)
+
+p <- 
+  ggplot(my_data) +
+  statebins:::geom_rrect(
+    mapping=aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+    radius = unit(5,'pt'),  
+    fill = "white",
+    alpha = .08) +
+  statebins:::geom_rrect(
+    data = data2plot,
+    mapping=aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+    radius = unit(5,'pt'),  
+    fill = "white") +
+  annotate(
+    geom = 'text',
+    x = 0, y = -.6 + 0.02,
+    hjust = 0, vjust = 0,
+    label = percent_label,
+    color = 'white',
+    size = 29,
+    family = 'barlow_cond',
+    fontface = 'bold'
+  ) +
+  annotate(
+    geom = 'text',
+    x = 4.2, y = -.6 + 0.02 ,
+    hjust = 0, vjust = 0,
+    label = str_wrap(width = 30, plot_text),
+    color = 'grey60',
+    family = 'Ubuntu',
+    lineheight = .9
+  ) +  
+  theme_void() +
+  scale_x_continuous(expand = c(0.02,0,0.02,0)) +
+  scale_y_continuous(
+    expand = c(0.02,0,0.02,0),
+    limits = c(-.6,1)) +
+  theme(plot.background = 
+    elementalist::element_rect_round(
+      fill = 'black',
+      radius = unit(5,'pt'), ))
+
+png("2025/images/day26.png", type = "cairo", width = 450, height = 250, res = 300)
+p
+dev.off()
+```
