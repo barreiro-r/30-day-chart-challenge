@@ -231,7 +231,8 @@ data2plot |>
   ) +
   labs(
     title = "Love Wins... and Loses?",
-    subtitle = str_wrap("A global view showing that between 1991 and 2019, both that the percentage of countries with legalization or the explicit banning of same-sex marriage have become more prevalent.", width = 80)
+    subtitle = str_wrap("A global view showing that between 1991 and 2019, both that the percentage of countries with legalization or the explicit banning of same-sex marriage have become more prevalent.", width = 80),
+    caption = str_wrap("SOURCE Velasco (2020) – with major processing by Our World in Data")
   )
 
 
