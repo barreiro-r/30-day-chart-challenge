@@ -1,0 +1,219 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 29 - Extraterrestrial
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(MetBrewer)
+library(lubridate)
+library(ggh4x)
+library(showtext)
+
+font_add_google("Outfit", "outfit_thin", regular.wt = 200, bold.wt=300)
+font_add_google("Ubuntu", "Ubuntu", regular.wt = 400, bold.wt=700)
+font_add_google("Materoal Symbols Outlined", "Ubuntu", regular.wt = 400, bold.wt=700)
+font_add('md-outline', '2025/dataset-sources/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf')
+font_add('md-fill', '2025/dataset-sources/MaterialSymbolsOutlined_Filled_28pt-Bold.ttf')
+showtext_auto()
+showtext_opts(dpi = 300)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    # plot.title.position = "plot",
+    plot.title = element_text(family = "Ubuntu", size = 18, face = 'bold'),
+    plot.caption = element_text(size = 8, color = 'grey60',margin = margin(20,0,0,0)),
+    plot.subtitle = element_text(size = 9,lineheight = 1.15, margin = margin(5,0,15,0)),
+    axis.title.x = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    axis.title.y = element_markdown(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    axis.text = element_text(family = "Ubuntu", hjust = .5, size = 8, color = "grey40"),
+    legend.position = "top",
+    text = element_text(family = "Ubuntu"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+
+### Read raw data
+```{r}
+
+raw_data <- 
+  read_csv('2025/datasets/ufo-sightings.csv') |>
+  janitor::clean_names()
+
+```
+
+
+### Preparing data for plot
+```{r}
+data2plot <- 
+  raw_data |> 
+  mutate(hour = str_replace(datetime, ".* ([^:]*).*","\\1")) |>
+  count(hour) |> 
+  mutate(hour = if_else(hour == "24", "00", hour)) |>
+  group_by(hour) |>
+  summarise(sights = sum(n)) |>
+  ungroup()
+```
+
+### Time for plotting
+```{r}
+grid_labels_in_plot <- 
+  tibble(intercept = pretty_breaks(n = 4)(data2plot$sights)) |>
+  filter(intercept != 0)
+
+hourly_sky_colors <- c(
+  "00" = "#00001a", # Deep Night
+  "01" = "#000020", # Deep Night
+  "02" = "#000025", # Deep Night
+  "03" = "#100030", # Late Night/Pre-dawn hint
+  "04" = "#201040", # Pre-dawn/Astronomical Twilight
+  "05" = "#483D8B", # Dawn/Nautical Twilight (Dark Slate Blue)
+  "06" = "#FF8C69", # Sunrise/Civil Twilight (Salmon)
+  "07" = "#FFDAB9", # Early Morning (PeachPuff - post-sunrise glow)
+  "08" = "#ADD8E6", # Morning (Light Blue)
+  "09" = "#B0E0E6", # Mid-Morning (Powder Blue)
+  "10" = "#87CEEB", # Late Morning (Sky Blue)
+  "11" = "#6495ED", # Approaching Noon (Cornflower Blue)
+  "12" = "#1E90FF", # Noon (Dodger Blue - bright)
+  "13" = "#4682B4", # Early Afternoon (Steel Blue)
+  "14" = "#5F9EA0", # Mid-Afternoon (Cadet Blue)
+  "15" = "#708090", # Late Afternoon (Slate Gray - sun lowering)
+  "16" = "#FFA500", # Approaching Sunset (Orange)
+  "17" = "#FF6347", # Sunset Peak (Tomato Red-Orange)
+  "18" = "#FF7F50", # Dusk/Civil Twilight (Coral - post-sunset glow)
+  "19" = "#DA70D6", # Nautical Twilight (Orchid - purple/pink)
+  "20" = "#8A2BE2", # Astronomical Twilight (Blue Violet - deeper dusk)
+  "21" = "#483D8B", # Evening (Dark Slate Blue - twilight end)
+  "22" = "#191970", # Night (Midnight Blue)
+  "23" = "#000033"  # Late Night (Darker Blue)
+)
+
+sky_colors <- c(
+  "#000020",  # Back to Deep Night
+  "#000020", # Deep Night
+  "#4B0082", # Pre-Dawn Purple
+  "#FF8C00", # Sunrise Orange
+  "#ADD8E6", # Morning Light Blue
+  "#87CEEB", # Midday Sky Blue
+  "#6495ED", # Approaching Noon (Cornflower Blue)
+  "#1E90FF", # Afternoon Blue
+  "#1E90FF", # Afternoon Blue
+  "#1E90FF", # Afternoon Blue
+  "#87CEEB", # Late Morning (Sky Blue)
+  "#FFB000", # Sunset Yellow/Orange
+  "#FF4500", # Sunset Red
+  "#483D8B", # Dusk Dark Blue/Purple
+  "#000020",  # Back to Deep Night
+  "#000020"  # Back to Deep Night
+)
+sky_palette_func <- colorRampPalette(sky_colors)
+generated_hourly_colors <- sky_palette_func(24)
+
+eye_symbol <- ''
+highlight_symbol <- '\uecb3' # award-star
+
+data2plot |>
+  ggplot(aes(x = hour, y = sights)) +
+  geom_hline(
+    data = grid_labels_in_plot,
+    aes(yintercept = intercept),
+    linewidth = .25,
+    color = '#aebae0') +
+  geom_text(
+    data = grid_labels_in_plot,
+    aes(y = intercept, label = str_c(intercept/1000,'k')), x = 12.5,
+    color = '#aebae0',
+    size = 2.5,
+    hjust = .5,
+    nudge_y = 100,
+    vjust = -.4,
+  ) +
+
+  # Central piece
+  annotate(
+    geom = 'point',
+    x = '00', y = -10000,
+    size = 25,
+    color = "#d7dffa"
+  ) +  
+  annotate(
+    geom = 'text',
+    label = eye_symbol,
+    x = '00', y = -10000,
+    size = unit(8,'pt'),
+    vjust = 0,
+    family = 'md-outline',
+    color = "#aebae0"
+  ) +
+  annotate(
+    geom = 'text',
+    label = str_c(round(sum(data2plot$sights) / 1000),'k\nsights'),
+    x = '00', y = -10000,
+    vjust = 1.05,
+    size = unit(3,'pt'),
+    lineheight = .8,
+    color = "#47506e"
+  ) +
+
+
+  # Main geometry
+  geom_col(aes(fill = hour)) +
+
+
+  # Highlight piece
+  annotate(
+    geom = 'text',
+    label = highlight_symbol,
+    x = data2plot |> filter(sights == max(sights)) |> pull(hour),
+    y = data2plot |> filter(sights == max(sights)) |> pull(sights) + 1000,
+    angle = 34,
+    size = unit(3.5,'pt'),
+    family = 'md-fill',
+    color = "#FFB000"
+  ) +
+
+  # Theme and scales
+  scale_y_continuous(expand = c(0,0,0,0)) +
+  scale_x_discrete(expand = c(0,0,0.025,0), label = function(x){str_c(x,'h')}) +
+  # viridis::scale_fill_viridis() +
+  scale_fill_manual(values = generated_hourly_colors) +
+  coord_radial()  +
+  guides(
+    fill = 'none'
+  ) +
+  theme(
+    axis.text.x = element_text(
+      size = 6, color = "#aebae0"
+    ),
+    axis.text.y = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+  ) + 
+  labs(
+    title = 'UFO Sightings',
+    subtitle = 'Hour of reports of unidentified flying object reports in the last century.',
+    caption = 'SOURCE Kaggle UFO Sightings'
+  )
+```
