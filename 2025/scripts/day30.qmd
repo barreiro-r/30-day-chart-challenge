@@ -1,0 +1,336 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+---
+
+# 30DayChartChallenge
+## Day 30 - National Geographic
+
+```{r setup}
+library(tidyverse)
+library(janitor)
+library(ggrepel)
+library(ggtext)
+library(stringr)
+library(scales)
+library(MetBrewer)
+library(lubridate)
+library(ggh4x)
+library(showtext)
+
+font_add_google("Montserrat", "montserrat", regular.wt = 400, bold.wt=800)
+font_add_google("Ubuntu", "Ubuntu", regular.wt = 400, bold.wt=700)
+font_add('md-outline', '2025/dataset-sources/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf')
+font_add('md-fill', '2025/dataset-sources/MaterialSymbolsOutlined_Filled_28pt-Bold.ttf')
+showtext_auto()
+showtext_opts(dpi = 300)
+
+theme_set(
+    theme_minimal() +
+    theme(
+    # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+    # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+    # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+    # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.ticks.length = unit(-0.15, "cm"),
+    plot.background = element_blank(),
+    # plot.title.position = "plot",
+    plot.title = element_text(family = "montserrat", size = 12, face = 'bold', hjust = .5),
+    plot.caption = element_text(size = 8, color = 'grey60',margin = margin(20,0,0,0)),
+    plot.subtitle = element_text(size = 9,lineheight = 1.15, margin = margin(5,0,0,0), hjust = .5),
+    axis.title.x = element_markdown(family = "montserrat", hjust = 0, size = 8, color = "grey40"),
+    axis.title.y = element_markdown(family = "montserrat", hjust = .5, size = 8, color = "grey40"),
+    axis.text = element_text(family = "montserrat", hjust = .5, size = 8, color = "grey40"),
+    legend.position = "top",
+    text = element_text(family = "montserrat"),
+    plot.margin = margin(25, 25, 25, 25))
+)
+```
+
+
+### Read raw data
+```{r}
+# National Geographic insipiration 
+# https://www.nationalgeographic.com/magazine/graphics/covid-19-could-push-100-million-more-people-into-poverty-feature
+
+raw_data <- 
+  read_csv('2025/datasets/child-deaths-life-stage.csv') |>
+  janitor::clean_names()
+
+support_data <- 
+  read_csv('2025/datasets/annual-number-of-births-by-world-region.csv') |>
+  janitor::clean_names() |>
+  rename(country = 'entity', births = 'births_sex_all_age_all_variant_estimates') |>
+  select(country, year, births)
+```
+
+
+### Preparing data for plot
+```{r}
+data2plot <- 
+  raw_data |>
+  rename(
+    neonatal = 'deaths_of_babies_aged_less_than_28_days',
+    infant = 'deaths_of_children_aged_between_28_and_364_days',
+    child = 'deaths_of_children_aged_between_1_and_4_years',
+    country = 'entity'
+  ) |>
+  drop_na() |>
+  # group_by(country) |>
+  mutate(year_categ = if_else(year == 1990, 'first', 'other')) |>
+  mutate(year_categ = if_else(year == 2022, 'last', year_categ)) |>
+  # ungroup() |>
+  filter(year_categ %in% c('first','last')) |>
+  pivot_longer(
+    cols = c(child, infant, neonatal), 
+    names_to = 'death_stage', 
+    values_to = 'deaths') |>
+  left_join(support_data, by = c('country', 'year')) |>
+  mutate(death_by_k_births = deaths*1000/births) |>
+  group_by(country, year) |>
+  mutate(sum_death_by_k_births = sum(death_by_k_births)) |>
+  ungroup() |>
+  filter(sum_death_by_k_births > 2)
+
+# Selecting Coutries
+country_with_most_reduction <- 
+  data2plot |>
+  distinct(country, year_categ, sum_death_by_k_births) |>
+  pivot_wider(names_from = year_categ, values_from = sum_death_by_k_births) |>
+  mutate(delta = 1-last/first) |>
+  arrange(-delta) |>
+  slice_max(delta, n = 5) |>
+  pull(country)
+
+data2plot <- 
+  data2plot |> 
+  filter(country %in% country_with_most_reduction) |>
+  select(country, death_by_k_births, year_categ, death_stage) |>
+  pivot_wider(
+    id_cols = c(country,death_stage), 
+    names_from = year_categ, 
+    values_from = death_by_k_births) |>
+  mutate(new_id = match(country, unique(country)))
+
+# Labels
+country_labels <- 
+  data2plot |>
+  group_by(new_id, country) |>
+  summarise(sum_first = sum(first), sum_last = sum(last)) |>
+  ungroup() |>
+  mutate(reduction = (sum_first - sum_last) / sum_first) |>
+  mutate(label = 
+    str_c(
+      country,". <span style='color:#AAAAAA'>↓ _",round(reduction*100,digits = 2),"%_</span>"
+    )
+  )
+
+# Colors
+color_neonatal <- "#DD3843"
+color_neonatal_end <- "#f4a4aa"
+color_infant <- "#F3B343"
+color_infant_end <- "#f0ddbc"
+color_child <- "#5ABAC3"
+color_child_end <- "#bbdfe2"
+
+# Grid in plot
+major_grid_labels_in_plot <- 
+  tibble(intercept = seq(0,60,20))
+
+minor_grid_labels_in_plot <- 
+  tibble(intercept = seq(0,60,1)) |>
+  filter(!intercept %in% major_grid_labels_in_plot$intercept)
+
+# Color labels
+color_labels <- c(
+    'neonatal' = '< 28 days',
+    'infant' = '28-364 days',
+    'child' = '1-4 years')
+```
+
+### Time for plotting
+```{r}
+data2plot |>
+  ggplot(aes(y = new_id)) +
+
+  annotate(
+    geom = 'text',
+    label = "Mortality Rate by 1.000 births",
+    x = -1,
+    y = 0.2,
+    size = 3,
+    hjust = 0
+  ) +
+  # Add grid
+  geom_segment(
+    data = major_grid_labels_in_plot,
+    aes(x = intercept), y = .5, yend = .6,
+    color = 'black', linewidth = .6
+  ) +
+  geom_segment(
+    data = major_grid_labels_in_plot,
+    aes(x = intercept), y = .5, yend = 5.8,
+    color = 'grey80', linewidth = .1
+  ) +
+  geom_segment(
+    data = minor_grid_labels_in_plot,
+    aes(x = intercept), y = .5, yend = .6,
+    color = 'grey80', linewidth = .3
+  ) +
+  geom_text(
+    data = major_grid_labels_in_plot,
+    aes(x = intercept, label = intercept), y = .5,
+    color = 'black', fontface = 'bold', vjust = 1.3, size = 2.5,
+    family="montserrat"
+  ) +
+
+  # Add lines
+  ggforce::geom_link(
+    data = subset(data2plot, death_stage == 'neonatal'),
+    aes(
+      x = first, xend = last, colour_neonatal = after_stat(index),
+      y = new_id + 0.2, yend = new_id + 0.2
+    ),
+    linewidth = 2, lineend = 'round', n = 500, show.legend = FALSE
+  ) +
+  ggforce::geom_link(
+    data = subset(data2plot, death_stage == 'infant'),
+    aes(
+      x = first, xend = last, colour_infant = after_stat(index),
+      y = new_id + 0.0, yend = new_id + 0.0
+    ),
+    linewidth = 2, lineend = 'round', n = 500, show.legend = FALSE
+  ) +
+  ggforce::geom_link(
+    data = subset(data2plot, death_stage == 'child'),
+    aes(
+      x = first, xend = last, colour_child = after_stat(index),
+      y = new_id - 0.2, yend = new_id - 0.2
+    ),
+    linewidth = 2, lineend = 'round', n = 500, show.legend = FALSE
+  ) +
+
+  # Add start
+  geom_point(
+    data = subset(data2plot, death_stage == 'neonatal'),
+    aes(x = first, color = death_stage, y = new_id + 0.2)
+  ) +
+  geom_point(
+    data = subset(data2plot, death_stage == 'infant'),
+    aes(x = first, color = death_stage, y = new_id + 0.0)
+  ) +
+  geom_point(
+    data = subset(data2plot, death_stage == 'child'),
+    aes(x = first, color = death_stage, y = new_id - 0.2)
+  ) +
+  geom_point(
+    data = subset(data2plot, death_stage == 'neonatal'),
+    aes(x = first, y = new_id + 0.2),  color = 'white', size = .8
+  ) +
+  geom_point(
+    data = subset(data2plot, death_stage == 'infant'),
+    aes(x = first, y = new_id + 0.0),  color = 'white', size = .8
+  ) +
+  geom_point(
+    data = subset(data2plot, death_stage == 'child'),
+    aes(x = first, y = new_id - 0.2),  color = 'white', size = .8
+  ) +
+  geom_text(
+    data = subset(data2plot, death_stage == 'neonatal'),
+    aes(x = first, color = death_stage, y = new_id + 0.2),
+    label = '1995', size = 2, family = 'montserrat', hjust = -.25, show.legend = FALSE
+  ) +
+  geom_text(
+    data = subset(data2plot, death_stage == 'infant'),
+    aes(x = first, color = death_stage, y = new_id + 0.0),
+    label = '1995', size = 2, family = 'montserrat', hjust = -.25, show.legend = FALSE
+  ) +
+  geom_text(
+    data = subset(data2plot, death_stage == 'child'),
+    aes(x = first, color = death_stage, y = new_id - 0.2),
+    label = '1995', size = 2, family = 'montserrat', hjust = -.25, show.legend = FALSE
+  ) +
+  # Add end
+  geom_point(
+    data = subset(data2plot, death_stage == 'neonatal'),
+    aes(x = last, y = new_id + 0.2), color = 'white', size = .2
+  ) +
+  geom_point(
+    data = subset(data2plot, death_stage == 'infant'),
+    aes(x = last, y = new_id + 0.0), color = 'white', size = .2
+  ) +
+  geom_point(
+    data = subset(data2plot, death_stage == 'child'),
+    aes(x = last, y = new_id - 0.2), color = 'white', size = .2
+  ) +
+  geom_text(
+    data = subset(data2plot, death_stage == 'neonatal'),
+    aes(x = last, y = new_id + 0.2, color = death_stage), size = 2,
+    label = '2020', family = 'montserrat', hjust = 1.2, show.legend = FALSE
+  ) +
+  geom_text(
+    data = subset(data2plot, death_stage == 'infant'),
+    aes(x = last, y = new_id + 0.0, color = death_stage), size = 2,
+    label = '2020', family = 'montserrat', hjust = 1.2, show.legend = FALSE
+  ) +
+  geom_text(
+    data = subset(data2plot, death_stage == 'child'),
+    aes(x = last, y = new_id - 0.2, color = death_stage), size = 2,
+    label = '2020', family = 'montserrat', hjust = 1.2, show.legend = FALSE
+  ) +
+  
+  # Add title
+  ggtext::geom_richtext(
+    data = country_labels,
+    aes(
+      y = new_id + 0.4,
+      label = label
+    ),
+    fill = NA, label.color = NA,
+    x = -2, hjust = 0,
+    family = 'montserrat',
+    size = 3) +
+
+    # Themes and Scales
+    theme(
+      axis.text.y = element_blank(),
+      axis.title.y = element_blank(),
+      axis.text.x = element_blank(),
+      axis.title.x = element_blank(),
+      legend.text = element_text(size = 8)
+    ) +
+    ggh4x::scale_colour_multi(
+      aesthetics = c("colour_neonatal","colour_infant","colour_child"),
+      name = list("Neonatal", "Infant", "Child"),
+      colours = list(
+          colorRampPalette(c(color_neonatal_end,color_neonatal))(10),
+          colorRampPalette(c(color_infant_end,color_infant))(10),
+          colorRampPalette(c(color_child_end,color_child))(10)
+    )) +
+    scale_color_manual(values = c(
+      'neonatal' = color_neonatal,
+      'infant' = color_infant,
+      'child' = color_child
+    ), label = color_labels) +
+    scale_x_continuous(
+      expand = c(0.1,0,0.1,0)
+    ) +
+    scale_y_continuous(
+      expand = c(0.1,0,0.1,0)
+    ) +
+    labs(
+      x = 'Mortality Rate by 1.000 births',
+      title = "CHILD DEATH REDUCTION",
+      color = NULL,
+      subtitle = "Countries with most reduction of child death between 1995-2020",
+      caption = str_wrap(width = 80,'SOURCE United Nations Inter-agency Group for Child Mortality Estimation (2025)Population based on various sources (2024) – with major processing by Our World in Data')
+    )
+    
+
+```

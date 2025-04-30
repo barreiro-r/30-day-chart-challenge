@@ -23,7 +23,6 @@ library(showtext)
 
 font_add_google("Outfit", "outfit_thin", regular.wt = 200, bold.wt=300)
 font_add_google("Ubuntu", "Ubuntu", regular.wt = 400, bold.wt=700)
-font_add_google("Materoal Symbols Outlined", "Ubuntu", regular.wt = 400, bold.wt=700)
 font_add('md-outline', '2025/dataset-sources/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf')
 font_add('md-fill', '2025/dataset-sources/MaterialSymbolsOutlined_Filled_28pt-Bold.ttf')
 showtext_auto()
