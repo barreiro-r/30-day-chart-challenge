@@ -180,7 +180,7 @@ my_plot <-
     fill = NULL,
     title = str_wrap(
       str_c(
-        "**Spotify Top 100: Track Longevity** Each tile represents one song currently on the chart."
+        "**Track Longevity** Each tile represents one song currently on Spotify Top 100 chart."
       ),
       width = 45
     ) |>
@@ -221,9 +221,5 @@ my_plot <-
     axis.text = element_blank()
   )
 
-# ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day03.png")
-```
-
-```{r}
-data2plot
+ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day02.png")
 ```
