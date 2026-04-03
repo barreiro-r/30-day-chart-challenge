@@ -1,0 +1,266 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 04 - Comparisons: Slope
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x,
+  showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+font_add(family = "fa-solid", 
+         regular = "Font Awesome 6 Free-Solid-900.otf")
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.text = element_markdown(family = "Hanken Grotesk"),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+```{r}
+raw_data <- 
+  read_csv('2026/datasets/spotify_global_trends_2026 - spotify_global_trends_final.csv')
+```
+
+
+### Preparing data for plot
+
+
+```{r}
+data2plot <-
+  raw_data |>
+  filter(genre != "Billboard Hot 100") |>
+  mutate(genre_lump = fct_lump(genre, 8)) |>
+  mutate(streams_after = streams + stream_change)
+
+data2plot_stats <-
+  data2plot |>
+  group_by(genre_lump) |>
+  summarise(
+    mean_streams = mean(streams),
+    mean_stream_change = mean(stream_change),
+  )
+
+genres_up <-
+  data2plot_stats |>
+  filter(mean_stream_change > 0) |>
+  pull(genre_lump)
+
+genres_down <-
+  data2plot_stats |>
+  filter(mean_stream_change < 0) |>
+  pull(genre_lump)
+
+data2plot_stats <-
+  data2plot_stats |>
+  mutate(mean_streams_after = mean_streams + mean_stream_change) |>
+  select(-mean_stream_change) |>
+  pivot_longer(
+    cols = c(mean_streams, mean_streams_after),
+    names_to = "stage",
+    values_to = "streams"
+  ) |>
+  mutate(stage = str_remove(stage, "mean_"))
+
+data2plot <-
+  data2plot |>
+  select(genre_lump, streams, streams_after) |>
+  pivot_longer(
+    cols = c(streams, streams_after),
+    names_to = "stage",
+    values_to = "streams"
+  )
+```
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+pacman::p_load(ggbeeswarm)
+
+my_plot <-
+  data2plot |>
+  ggplot(aes(x = stage, y = streams)) +
+  ggbeeswarm::geom_quasirandom(
+    size = .2,
+    aes(color = stage),
+    show.legend = FALSE,
+    alpha = .3
+  ) +
+  geom_point(
+    data = data2plot_stats |> filter(genre_lump %in% genres_down),
+    color = colors_nizami[["orange_light"]],
+  ) +
+  geom_line(
+    data = data2plot_stats |> filter(genre_lump %in% genres_down),
+    color = colors_nizami[["orange_light"]],
+    group = 1,
+  ) +
+  geom_point(
+    data = data2plot_stats |> filter(genre_lump %in% genres_up),
+    color = colors_nizami[["teal_dark"]]
+  ) +
+  geom_line(
+    data = data2plot_stats |> filter(genre_lump %in% genres_up),
+    color = colors_nizami[["teal_dark"]],
+    group = 1,
+  ) +
+  geom_text(
+    data = data2plot_stats,
+    aes(label = round(streams / 10^6, 2) |> str_c("M")),
+    family = "Hanken Grotesk",
+    size = 2,
+    vjust = -1.1
+  ) +
+  facet_wrap(~genre_lump, scales = "free_y") +
+  scale_y_continuous(labels = function(x) {
+    (x / 10^6)
+  }) +
+  scale_color_manual(
+    values = c(
+      "streams" = "grey70",
+      "streams_after" = colors_nizami[["blue"]]
+    )
+  ) +
+  theme(
+    axis.text.x = element_blank(),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    strip.text = element_markdown(hjust = 0, size = 6, face = "bold"),
+    axis.text.y = element_blank(),
+    panel.spacing = unit(1.5, "lines")
+  ) +
+  labs(
+    fill = NULL,
+    title = str_wrap(
+      str_c(
+        "**Track Evolution** Changes in streams since last report of Spotify 2026 Top 100"
+      ),
+      width = 42,
+      whitespace_only = FALSE
+    ) |>
+      str_c("<span style='font-size:12px'>") |>
+      str_c(
+        "\n<span style='color:",
+        "#8d8d8dff",
+        "'>",
+        "Before</span> – <span style='color:",
+        colors_nizami[["blue"]],
+        "'>After</span>"
+      ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE Kaggle NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>")
+  )
+
+ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day04.png")
+
+```
