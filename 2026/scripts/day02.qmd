@@ -10,7 +10,7 @@ output:
 ---
 
 # 30 Day Chart Challenge 2026
-## Day 01 - COmparisons: Part-to-Whole
+## Day 02 - Comparisons: Pictogram
 
 ### Load libraries & Set Themes
 ```{r}
@@ -221,7 +221,7 @@ my_plot <-
     axis.text = element_blank()
   )
 
-ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day02.png")
+# ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day03.png")
 ```
 
 ```{r}

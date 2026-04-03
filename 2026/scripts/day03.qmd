@@ -10,7 +10,7 @@ output:
 ---
 
 # 30 Day Chart Challenge 2026
-## Day 01 - Comparisons: Part-to-Whole
+## Day 03 - Comparisons: Mosaic
 
 ### Load libraries & Set Themes
 ```{r}
@@ -40,8 +40,24 @@ pacman::p_load(
 # showtext_auto()
 # showtext_opts(dpi = 300)
 
+font_add(family = "fa-solid", 
+         regular = "Font Awesome 6 Free-Solid-900.otf")
+
 warm_white <- "#f0ebe3ff"
 warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
 
 theme_set(
   theme_minimal() +
@@ -56,6 +72,7 @@ theme_set(
       axis.ticks.length = unit(-0.15, "cm"),
       plot.background = element_rect(fill = warm_white),
       plot.title.position = "plot",
+      plot.caption.position = "plot",
       plot.title = element_markdown(
         family = "Hanken Grotesk",
         size = 12,
@@ -81,13 +98,15 @@ theme_set(
         family = "Hanken Grotesk",
         hjust = 0,
         size = 8,
-        color = "grey40"
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
       ),
       axis.title.y = element_markdown(
         family = "Hanken Grotesk",
         hjust = 0.5,
         size = 8,
-        color = "grey40"
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
       ),
       axis.text = element_markdown(
         family = "Hanken Grotesk",
@@ -115,113 +134,99 @@ raw_data <-
 
 
 ```{r}
-# To simplify, one artist one genre
-artist_genre <-
-  raw_data |>
-  filter(genre != "Billboard Hot 100") |>
-  group_by(artist_name, genre) |>
-  summarise(streams = sum(streams)) |>
-  slice_max(streams) |>
-  select(artist_name, genre)
-
 data2plot <-
   raw_data |>
-  filter(genre != "Billboard Hot 100") |>
-  select(-genre) |>
-  left_join(artist_genre) |>
-  mutate(genre_lump = fct_lump(tolower(genre), w = streams, n = 5))
+  head(100) |>
+  select(country, longevity) |>
+  mutate(country = fct_lump(country, 4))
 
-# Collect Popular Genres
-main_genres <-
-  data2plot |>
-  distinct(genre_lump) |>
-  pull(genre_lump)
+icon_labels <- c(
+  `Stable Hit` = "\uf004",
+  `New` = "\uf666",
+  `Evergreen` = "\uf3a5"
+)
 
-search_expression <-
-  main_genres |>
-  str_c(collapse = "|") |>
-  tolower()
-
-# Trying to reduce the number of Other
-reclassifying_genres <-
-  data2plot |>
-  filter(genre != "Billboard Hot 100") |>
-  distinct(genre) |>
-  mutate(
-    extracted_word = str_extract(tolower(genre), search_expression),
-    main_genre = coalesce(extracted_word, search_expression)
-  ) |>
-  select(-main_genre)
-
-# Count streams
-data2plot <-
-  data2plot |>
-  left_join(reclassifying_genres, by = "genre") |>
-  mutate(
-    genre_lump = if_else(
-      genre_lump == "Other" & !is.na(extracted_word),
-      extracted_word,
-      genre_lump
-    )
-  ) |>
-  filter(pos < 100) |>
-  group_by(artist_name, genre_lump) |>
-  summarise(sum_streams = sum(streams)) |>
-  mutate(genre_lump = str_to_title(genre_lump))
-
-better_levels <-
-  data2plot |>
-  mutate(genre_lump = as.character(genre_lump)) |>
-  group_by(genre_lump) |>
-  summarise(sum_streams = sum(sum_streams)) |>
-  arrange(desc(sum_streams)) |>
-  filter(genre_lump != "Other") |>
-  pull(genre_lump) |>
-  c("Other")
-
-data2plot <-
-  data2plot |>
-  mutate(
-    genre_lump = factor(
-      genre_lump,
-      levels = better_levels
-    )
+full_names <-
+  c(
+    US = "United\nStates",
+    KR = "South\nKorea",
+    GB = "United\nKingdom",
+    PR = "Puerto\nRico",
+    Other = "Other"
   )
+
+data2plot <-
+  data2plot |>
+  mutate(country_full = full_names[as.character(country)])
+
+order <- data2plot |>
+  count(country_full) |>
+  filter(country_full != "Other") |>
+  arrange(desc(n)) |>
+  mutate(country_full = as.character(country_full)) |>
+  pull(country_full) |>
+  c("Other")
 ```
 
 ### Time for plotting
 ```{r fig.showtext=TRUE}
-pacman::p_load(treemapify)
+icons_title <- c(
+  Stable_Hit = "<span style='font-family:\"Font Awesome 6 Free\"; font-weight:900;'><b>\uf004;</b></span>",
+  New = "<span style='font-family:\"Font Awesome 6 Free\"; font-weight:900;'><b>\uf666;</b></span>",
+  Evergreen = "<span style='font-family:\"Font Awesome 6 Free\"; font-weight:900;'><b>\uf3a5;</b></span>"
+)
+
+devtools::install_github("haleyjeppson/ggmosaic")
+pacman::p_load(ggmosaic)
+
 
 my_plot <-
   data2plot |>
-  ggplot(aes(
-    area = sum_streams,
-    fill = genre_lump,
-    label = str_c(
-      artist_name,
-      "\n",
-      number(sum_streams, scale_cut = cut_short_scale(), accuracy = 0.01)
-    ),
-    subgroup = genre_lump
-  )) +
-  geom_treemap(color = warm_white) +
-  geom_treemap_text(
-    colour = warm_white,
-    size = 6,
-    place = "topleft",
-    family = ""
+  mutate(country_full = fct_relevel(country_full, rev(order))) |>
+  ggplot() +
+  geom_mosaic(
+    aes(x = product(country_full), fill = longevity),
+    show.legend = FALSE
   ) +
-  geom_treemap_subgroup_border(color = warm_white) +
-  MetBrewer::scale_fill_met_d("Nizami") +
+  scale_fill_manual(
+    values = c(
+      "Stable Hit" = colors_nizami[["blue"]],
+      "New" = colors_nizami[["orange_dark"]],
+      "Evergreen" = colors_nizami[["teal"]]
+    )
+  ) +
+  coord_flip(expand = FALSE) +
   labs(
     fill = NULL,
     title = str_wrap(
       str_c(
-        "**Spotify Top 100: Stream Volume by Artist** Each tile represents an individual artist, with surface area scaled proportionally to their total stream count."
+        "**Spotify Top 100: The land of the Hits** A proportional breakdown of song performance categories across top regions."
       ),
-      width = 45
+      width = 42,
+      whitespace_only = FALSE
     ) |>
+      str_c("<span style='font-size:12px'>") |>
+      str_c(
+        "\n\n<span style='color:",
+        colors_nizami[["blue"]],
+        "'>",
+        icons_title[["Stable_Hit"]],
+        " Stable Hit</span> consistently performing over time;"
+      ) |>
+      str_c(
+        "\n<span style='color:",
+        colors_nizami[["orange_dark"]],
+        "'>",
+        icons_title[["New"]],
+        " New</span> recently entered the chart;"
+      ) |>
+      str_c(
+        "\n<span style='color:",
+        colors_nizami[["teal_dark"]],
+        "'>",
+        icons_title[["Evergreen"]],
+        " Evergreen</span> long-term sustained success;"
+      ) |>
       str_replace_all("\n", "<br>"),
     caption = str_wrap(
       width = 65,
@@ -230,9 +235,9 @@ my_plot <-
       str_replace_all("\n", "<br>")
   ) +
   theme(
-    legend.justification = c(0, 1),
-    legend.margin = margin(0, 0, 0, 0, 'cm')
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
   )
 
-ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day01.png")
+ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day03.png")
 ```
