@@ -1,0 +1,238 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 01 - COmparisons: Part-to-Whole
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x,
+  showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0,
+        size = 8,
+        color = "grey40"
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.text = element_markdown(family = "Hanken Grotesk"),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+```{r}
+raw_data <- 
+  read_csv('2026/datasets/spotify_global_trends_2026 - spotify_global_trends_final.csv')
+```
+
+
+### Preparing data for plot
+
+
+```{r}
+# To simplify, one artist one genre
+artist_genre <-
+  raw_data |>
+  filter(genre != "Billboard Hot 100") |>
+  group_by(artist_name, genre) |>
+  summarise(streams = sum(streams)) |>
+  slice_max(streams) |>
+  select(artist_name, genre)
+
+data2plot <-
+  raw_data |>
+  filter(genre != "Billboard Hot 100") |>
+  select(-genre) |>
+  left_join(artist_genre) |>
+  mutate(genre_lump = fct_lump(tolower(genre), w = streams, n = 5))
+
+# Collect Popular Genres
+main_genres <-
+  data2plot |>
+  distinct(genre_lump) |>
+  pull(genre_lump)
+
+search_expression <-
+  main_genres |>
+  str_c(collapse = "|") |>
+  tolower()
+
+# Trying to reduce the number of Other
+reclassifying_genres <-
+  data2plot |>
+  filter(genre != "Billboard Hot 100") |>
+  distinct(genre) |>
+  mutate(
+    extracted_word = str_extract(tolower(genre), search_expression),
+    main_genre = coalesce(extracted_word, search_expression)
+  ) |>
+  select(-main_genre)
+
+# Count streams
+data2plot <-
+  data2plot |>
+  left_join(reclassifying_genres, by = "genre") |>
+  mutate(
+    genre_lump = if_else(
+      genre_lump == "Other" & !is.na(extracted_word),
+      extracted_word,
+      genre_lump
+    )
+  ) |>
+  filter(pos < 100) |>
+  group_by(artist_name, genre_lump) |>
+  summarise(sum_streams = sum(streams)) |>
+  mutate(genre_lump = str_to_title(genre_lump))
+
+better_levels <-
+  data2plot |>
+  mutate(genre_lump = as.character(genre_lump)) |>
+  group_by(genre_lump) |>
+  summarise(sum_streams = sum(sum_streams)) |>
+  arrange(desc(sum_streams)) |>
+  filter(genre_lump != "Other") |>
+  pull(genre_lump) |>
+  c("Other")
+
+data2plot <-
+  data2plot |>
+  mutate(
+    genre_lump = factor(
+      genre_lump,
+      levels = better_levels
+    )
+  )
+```
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+pacman::p_load(treemapify)
+
+my_plot <-
+  data2plot |>
+  ggplot(aes(
+    area = sum_streams,
+    fill = genre_lump,
+    label = str_c(
+      artist_name,
+      "\n",
+      number(sum_streams, scale_cut = cut_short_scale(), accuracy = 0.01)
+    ),
+    subgroup = genre_lump
+  )) +
+  geom_treemap(color = warm_white) +
+  geom_treemap_text(
+    colour = warm_white,
+    size = 6,
+    place = "topleft",
+    family = ""
+  ) +
+  geom_treemap_subgroup_border(color = warm_white) +
+  MetBrewer::scale_fill_met_d("Nizami") +
+  labs(
+    fill = NULL,
+    title = str_wrap(
+      str_c(
+        "**Spotify Top 100: Stream Volume by Artist** Each tile represents an individual artist, with surface area scaled proportionally to their total stream count."
+      ),
+      width = 45
+    ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE Kaggle NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>")
+  ) +
+  theme(
+    legend.justification = c(0, 1),
+    legend.margin = margin(0, 0, 0, 0, 'cm')
+  )
+
+ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day01.png")
+```
