@@ -200,7 +200,7 @@ my_plot <-
     fill = NULL,
     title = str_wrap(
       str_c(
-        "**Spotify Top 100: The land of the Hits** A proportional breakdown of song performance categories across top regions."
+        "**The land of the Hits** A proportional breakdown of song performance categories across top regions of Spotify Top 100 songs."
       ),
       width = 42,
       whitespace_only = FALSE

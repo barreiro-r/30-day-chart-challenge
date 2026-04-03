@@ -218,7 +218,7 @@ my_plot <-
     fill = NULL,
     title = str_wrap(
       str_c(
-        "**Spotify Top 100: Stream Volume by Artist** Each tile represents an individual artist, with surface area scaled proportionally to their total stream count."
+        "**Stream Volume by Artist** Each tile represents an individual artist in Spotify Top 100, with surface area scaled proportionally to their total stream count."
       ),
       width = 45
     ) |>
