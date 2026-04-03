@@ -40,9 +40,6 @@ pacman::p_load(
 # showtext_auto()
 # showtext_opts(dpi = 300)
 
-font_add(family = "fa-solid", 
-         regular = "Font Awesome 6 Free-Solid-900.otf")
-
 warm_white <- "#f0ebe3ff"
 warm_black <- "#38352fff"
 
