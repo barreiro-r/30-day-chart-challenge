@@ -10,7 +10,7 @@ output:
 ---
 
 # 30 Day Chart Challenge 2026
-## Day 06 - Comparisons: Reporters Without Borders Data Day
+## Day 07 - Distributions: Multiscale
 
 ### Load libraries & Set Themes
 ```{r}
