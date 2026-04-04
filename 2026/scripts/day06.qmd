@@ -10,7 +10,7 @@ output:
 ---
 
 # 30 Day Chart Challenge 2026
-## Day 04 - Comparisons: Slope
+## Day 06 - Comparisons: Reporters Without Borders Data Day
 
 ### Load libraries & Set Themes
 ```{r}
@@ -40,7 +40,7 @@ pacman::p_load(
 # showtext_auto()
 # showtext_opts(dpi = 300)
 
-warm_white <- "#f0ebe3ff"
+warm_white <- "#d0ccc5ff"
 warm_black <- "#38352fff"
 
 # MetBrewer::MetPalettes$Nizami
@@ -192,7 +192,7 @@ my_plot <-
     y = "Economy Rank",
     title = str_wrap(
       str_c(
-        "**Reports Without Borders** Comparison between safety and economy rankings"
+        "**Reporters Without Borders** Comparison between safety and economy rankings"
       ),
       width = 45,
       whitespace_only = FALSE
