@@ -1,0 +1,247 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 08 - Distributions: Circular
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25,25,25,25)
+    )
+)
+```
+
+
+### Read raw data
+```{r}
+raw_data <- 
+  read_csv('2026/datasets/globalAirQuality.csv') |>
+  janitor::clean_names()
+
+
+```
+
+
+### Preparing data for plot
+
+
+```{r}
+data2plot <-
+  raw_data |>
+  transmute(
+    hour = hour(timestamp),
+    year = year(timestamp),
+    city = city,
+    aqi = aqi
+  ) |>
+  group_by(hour, city) |>
+  summarise(min_aqi = min(aqi), max_aqi = max(aqi), mean_aqi = mean(aqi)) |>
+  filter(city %in% c("São Paulo", "New York", "Beijing", "London"))
+```
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+aqi_colors <- c(
+  colors_nizami[["teal"]], # 0-50
+  colors_nizami[["yellow"]], # 51-100
+  colors_nizami[["orange_light"]], # 101-150
+  colors_nizami[["red"]], # 151-200
+  colors_nizami[["blue_dark"]], # 201-300
+  colors_nizami[["orange_dark"]] # 301+
+)
+
+aqi_rescale <- scales::rescale(c(0, 50, 100, 150, 200, 300, 400))
+scale_color_aqi <- function(...) {
+  scale_color_gradientn(
+    colors = aqi_colors,
+    values = aqi_rescale,
+    limits = c(0, 400),
+    ...
+  )
+}
+
+my_plot <-
+  data2plot |>
+  ggplot(aes(x = hour)) +
+  ggforce::geom_link(
+    alpha = 0.4,
+    lineend = 'round',
+    linewidth = 1,
+    aes(
+      color = after_stat(y),
+      x = hour,
+      xend = hour,
+      y = min_aqi,
+      yend = max_aqi
+    )
+  ) +
+  geom_point(
+    aes(y = mean_aqi),
+    color = 'white',
+    size = 2
+  ) +
+  geom_point(
+    aes(y = mean_aqi, color = mean_aqi),
+    size = 1.5
+  ) +
+  facet_wrap(~city, ncol = 2) +
+  scale_color_aqi(name = "Air Quality Index") +
+  coord_radial(
+    r_axis_inside = TRUE,
+    inner.radius = 0.3,
+    clip = 'off',
+    expand = TRUE,
+    end = 2.1 * pi
+  ) +
+  scale_x_continuous(breaks = seq(0, 23, 1)) +
+  theme(
+    axis.title.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(size = 5),
+    panel.grid.major.y = element_line(color = 'grey80', linewidth = .2),
+    plot.title.position = "panel",
+
+  ) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(
+    fill = NULL,
+    y = NULL,
+    x = "Days in Top 100",
+    title = str_wrap(
+      str_c(
+        "**Air Quality Through the Day**
+Hourly minimum and maximum AQI. The central dot represents the mean.
+_(Note: Visualized using synthetic data based on real data)_"
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE Kaggle NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>")
+  ) +
+  guides(
+    color = guide_colorbar(
+      theme = theme(
+        legend.key.width = unit(10, "lines"),
+        legend.key.height = unit(0.3, "lines"),
+        legend.title.position = 'top',
+        legend.title = element_markdown(size = 10),
+        legend.ticks = element_blank()
+      )
+    )
+  )
+my_plot
+ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day08.png", scale = 1.2)
+```
