@@ -1,0 +1,169 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 11 - Distributions: Physical
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+```{r}
+my_image <- "2026/dataset-sources/solid-img.png"
+```
+
+
+### Preparing data for plot
+```{r}
+
+```
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+# my_plot <-
+pacman::p_load(ggimage)
+
+my_plot <-
+  tibble(x = 1, y = 1) |>
+  ggplot(aes(x = x, y = y)) +
+  geom_image(image = my_image, size = 0.85) +
+  labs(
+    fill = NULL,
+    y = NULL,
+    x = "Share of the wealth",
+    title = str_wrap(
+      str_c(
+        "**Halloween Teeth Candy** Color distribuition of the halloween teeth candy inside a  single small package."
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE myself 2015 NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>")
+  ) +
+  theme(
+    axis.text = element_blank(),
+    axis.title = element_blank(),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  )
+
+
+ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day11.png")
+```
