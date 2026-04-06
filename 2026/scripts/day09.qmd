@@ -1,0 +1,220 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 09 - Distributions: Wealth
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+```{r}
+raw_data <- 
+  read_delim('2026/datasets/WID_Data_06042026-052616.csv', delim = ';', skip = 1) |>
+  janitor::clean_names()
+```
+
+
+### Preparing data for plot
+```{r}
+data2plot <-
+  raw_data |>
+  filter(year == 2015) |>
+  pivot_longer(-c(year, percentile), names_to = "country") |>
+  mutate(country = str_remove(country, ".*adults_equal_split_")) |>
+  filter(!str_detect(country, "world")) |>
+  filter(!str_detect(country, "_mer$")) |>
+  filter(!str_detect(country, "other")) |>
+  filter(!str_detect(country, "asia"))
+
+top_contries <- data2plot |>
+  filter(percentile == "p90p100") |>
+  slice_max(value, n = 10) |>
+  pull(country)
+
+bottom_contries <- data2plot |>
+  filter(percentile == "p90p100") |>
+  slice_min(value, n = 10) |>
+  pull(country)
+
+data2plot <- data2plot |>
+  filter(country %in% c(top_contries, bottom_contries)) |>
+  mutate(
+    top_or_bottom = case_when(
+      country %in% top_contries ~ "Highest Wealth Inequality",
+      country %in% bottom_contries ~ "Lowest Wealth Inequality"
+    )
+  ) |>
+  mutate(country = str_to_title(country |> str_replace("_", " "))) |>
+  mutate(country = str_replace(country, "Usa", "United States")) 
+```
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+my_plot <-
+  data2plot |>
+  ggplot(aes(x = value, y = fct_reorder(country, value))) +
+  geom_col(
+    data = data2plot |>
+      filter(
+        top_or_bottom == "Highest Wealth Inequality" & percentile == "p90p100"
+      ),
+    fill = colors_nizami[["red"]]
+  ) +
+  geom_col(
+    data = data2plot |>
+      filter(
+        top_or_bottom == "Lowest Wealth Inequality" & percentile == "p90p100"
+      ),
+    fill = colors_nizami[["blue_dark"]]
+  ) +
+  ggpattern::geom_col_pattern(
+    data = data2plot |>
+      filter(percentile == "p99p100"),
+    pattern_color = warm_white,
+    width = 0.5,
+    fill = NA,
+    pattern_spacing = 0.015,
+    pattern_size = 0.1,
+    pattern_angle = 45
+  ) +
+  scale_x_continuous(expand = c(0, 0), labels = scales::percent) +
+  facet_wrap(~top_or_bottom, scale = 'free_y', ncol = 1) +
+  labs(
+    fill = NULL,
+    y = NULL,
+    x = "Share of the wealth",
+    title = str_wrap(
+      str_c(
+        "**Measuring Wealth Inequality** How much of a country's wealth belongs to its richest citizens?"
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      str_c(
+        "<br><br><span style='font-size:12px'>Full bar = Top 10% share | <span style='color:",
+        "#9c8e87ff",
+        "'> Hatched area = Top 1% share</span></span>"
+      ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE wid 2015 NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>")
+  )
+my_plot
+ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day09.png")
+```
