@@ -24,8 +24,8 @@ pacman::p_load(
   scales,
   MetBrewer,
   lubridate,
-  ggh4x,
-  showtext
+  ggh4x
+  # showtext
 )
 
 # showtext and ggtext::element_markdown 
@@ -93,7 +93,7 @@ theme_set(
       ),
       axis.title.x = element_markdown(
         family = "Hanken Grotesk",
-        hjust = 0,
+        hjust = 0.5,
         size = 8,
         color = "grey40",
         margin = margin(0, 0, 0, 0)
@@ -122,8 +122,10 @@ theme_set(
 ### Read raw data
 ```{r}
 raw_data <- 
-  read_delim('2026/datasets/rsf2025.csv', delim = ';') |>
+  read_csv('2026/datasets/spotify_global_trends_2026 - spotify_global_trends_final.csv') |>
   janitor::clean_names()
+
+
 ```
 
 
@@ -131,68 +133,86 @@ raw_data <-
 
 
 ```{r}
+# data2plot <-
+#   raw_data |>
+#   group_by(occupation) |>
+#   summarise(
+#     stress_level = mean(stress_level),
+#     daily_steps = mean(daily_steps)
+#   ) |>
+#   mutate(delta = (stress_level * 1000) - daily_steps)
+
 data2plot <-
   raw_data |>
-  mutate(score = rank_eco - rank_saf) |>
-  select(country_en, rank_eco, rank_saf, score)
+  filter(!str_detect(track_name, "Spider-Man")) |>
+  slice_max(days, n = 10) |>
+  mutate(
+    label = track_name |>
+      str_replace("\\(.*\\)", "") |>
+      str_c(
+        "<br>",
+        "<span style='color:#aeaaa8ff'>",
+        artist_name,
+        '</span>'
+      )
+  ) |>
+  select(label, days, streams)
 
-# slice top3 and bottom3
-top3 <-
-  bind_rows(
-    data2plot |> slice_min(score, n = 3),
-    data2plot |> slice_max(score, n = 3)
-  )
+
 ```
 
 ### Time for plotting
 ```{r fig.showtext=TRUE}
-
 my_plot <-
   data2plot |>
-  ggplot(aes(x = rank_eco, y = rank_saf)) +
-  annotate(
-    "segment",
-    x = -Inf,
-    xend = Inf,
-    y = -Inf,
-    yend = Inf,
-    color = 'grey60',
-    linetype = 'dashed',
-    linewidth = 0.6
-  ) +
-  geom_point(aes(color = abs(score))) +
-  geom_text(data = top3, aes(label = country_en), size = 2.5, nudge_y = -4) +
-  scale_color_gradientn(
-    colors = MetBrewer::met.brewer('Nizami', direction = -1)
+  mutate(label = fct_reorder(label, streams)) |>
+  ggplot(aes(y = label)) +
+  geom_col(
+    aes(x = days),
+    fill = "#bcb1a6ff"
   ) +
   theme(
-    axis.text.x = element_blank(),
-    axis.text.y = element_blank(),
-    legend.position = 'inside',
-    legend.position.inside = c(1, 0),
-    legend.justification = c(1, 0),
-    legend.direction = 'horizontal'
-  ) +
-  guides(
-    color = guide_colorbar(
-      theme = theme(
-        legend.key.width = unit(4, "lines"),
-        legend.key.height = unit(0.2, "lines"),
-        legend.title.position = 'top',
-        legend.title = element_markdown(size = 8),
-        legend.text = element_blank(),
-        legend.ticks = element_blank()
-      )
+    axis.text.y.left = element_markdown(
+      family = "Hanken Grotesk",
+      size = 8,
+      lineheight = 0.9,
+      color = "grey40"
+    ),
+    axis.text.x.top = element_markdown(
+      family = "Hanken Grotesk",
+      size = 8,
+      lineheight = 0.9,
+      color = colors_nizami[["orange_dark"]]
+    ),
+    axis.title.x.top = element_markdown(
+      family = "Hanken Grotesk",
+      size = 8,
+      lineheight = 0.9,
+      color = colors_nizami[["orange_dark"]]
     )
   ) +
+  ggpattern::geom_col_pattern(
+    pattern = 'stripe',
+    aes(x = streams / 1000),
+    pattern_color = colors_nizami[["orange_dark"]],
+    fill = NA,
+    pattern_spacing = 0.015,
+    pattern_size = 0.1,
+    pattern_angle = 45
+  ) +
+  scale_x_continuous(
+    label = comma,
+    expand = expansion(mult = c(0, 0)),
+    sec.axis = sec_axis(trans = ~ . / 1000, name = "Streams (M)")
+  ) +
+  scale_y_discrete(expand = c(0, 0)) +
   labs(
     fill = NULL,
-    color = "Higher<br>Discrepancy →",
-    x = "Safety Rank",
-    y = "Economy Rank",
+    y = NULL,
+    x = "Days in Top 100",
     title = str_wrap(
       str_c(
-        "**Reporters Without Borders** Comparison between safety and economy rankings"
+        "**Enduring Hits** Do more days on the chart equal more streams?"
       ),
       width = 45,
       whitespace_only = FALSE
@@ -205,5 +225,5 @@ my_plot <-
       str_replace_all("\n", "<br>")
   )
 my_plot
-ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day06.png")
+ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day07.png")
 ```
