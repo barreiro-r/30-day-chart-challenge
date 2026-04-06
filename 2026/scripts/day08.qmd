@@ -131,7 +131,6 @@ raw_data <-
 
 ### Preparing data for plot
 
-
 ```{r}
 data2plot <-
   raw_data |>
@@ -143,7 +142,7 @@ data2plot <-
   ) |>
   group_by(hour, city) |>
   summarise(min_aqi = min(aqi), max_aqi = max(aqi), mean_aqi = mean(aqi)) |>
-  filter(city %in% c("São Paulo", "New York", "Beijing", "London"))
+  filter(city %in% c("São Paulo", "New York", "Beijing", "Riyadh"))
 ```
 
 ### Time for plotting
@@ -219,7 +218,7 @@ my_plot <-
       str_c(
         "**Air Quality Through the Day**
 Hourly minimum and maximum AQI. The central dot represents the mean.
-_(Note: Visualized using synthetic data based on real data)_"
+_(Note: Synthetic data based on real data)_"
       ),
       width = 45,
       whitespace_only = FALSE
