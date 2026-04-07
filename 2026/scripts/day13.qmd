@@ -1,0 +1,249 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 13 - Distributions: FlowingData (Theme day)
+
+Reference: https://flowingdata.com/2026/03/23/cities-with-most-ice-arrests/
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      # plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+```{r}
+raw_data <- 
+  read_delim('2026/datasets/amazon.csv', delim = ',') |>
+  janitor::clean_names()
+```
+
+
+### Preparing data for plot
+```{r}
+data2plot <- 
+  raw_data |>
+  group_by(year, month) |>
+  summarise(number_of_fires = sum(number)) |>
+  mutate(
+    month = case_when(
+      month == "Janeiro" ~ "January",
+      month == "Fevereiro" ~ "February",
+      month == "Mar\xe7o" ~ "March",
+      month == "Abril" ~ "April",
+      month == "Maio" ~ "May",
+      month == "Junho" ~ "June",
+      month == "Julho" ~ "July",
+      month == "Agosto" ~ "August",
+      month == "Setembro" ~ "September",
+      month == "Outubro" ~ "October",
+      month == "Novembro" ~ "November",
+      month == "Dezembro" ~ "December"
+    )
+  ) |>
+  group_by(year) |>
+  filter(n() == 12) |>
+  ungroup() |>
+  mutate(
+    month = factor(month, levels = month(1:12, label = TRUE, abbr = FALSE)),
+    month = fct_relabel(month, ~ str_sub(.x, 1, 3)),
+    decade = (year %/% 10) * 10,
+    decade = fct_reorder(factor(decade), year)
+  )
+```
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+pacman::p_load(patchwork)
+p1 <-
+  data2plot |>
+  group_by(year) |>
+  summarise(number_of_fires = sum(number_of_fires)) |>
+  ggplot(aes(x = year, y = number_of_fires / 1000)) +
+  geom_col(aes(fill = number_of_fires), width = 0.75) +
+  scale_fill_gradient(low = "#bcafa4ff", high = "#63554aff") +
+  theme(
+    legend.position = 'none',
+    axis.text.x = element_blank(),
+    plot.margin = margin(0, 0, 5, 0),
+    axis.title.x = element_blank(),
+    panel.grid.major.y = element_line(color = 'grey80', linewidth = .3)
+  ) +
+  coord_cartesian(expand = FALSE) +
+  labs(x = NULL, y = NULL)
+
+p2 <-
+  data2plot |>
+  ggplot(aes(x = year, y = month |> fct_rev())) +
+  geom_tile(aes(fill = number_of_fires), color = warm_white, size = 1) +
+  scale_fill_gradientn(
+    colors = met.brewer('Nizami', direction = -1),
+    breaks = c(
+      min(data2plot$number_of_fires),
+      max(data2plot$number_of_fires) / 2,
+      max(data2plot$number_of_fires)
+    ),
+    labels = ~ (. / 1000) |> round(digits = 1) |> str_c("k")
+  ) +
+  coord_cartesian(expand = FALSE) +
+  theme(
+    legend.position = "bottom",
+    legend.justification = c(0, 0),
+    legend.margin = margin(0, 0, 0, 0),
+    plot.margin = margin(0, 0, 0, 0),
+    legend.direction = 'horizontal',
+  ) +
+  labs(x = NULL, y = NULL, fill = "Number of fires") +
+  guides(
+    fill = guide_colorbar(
+      theme = theme(
+        legend.key.width = unit(8, "lines"),
+        legend.key.height = unit(0.2, "lines"),
+        legend.title = element_markdown(size = 8),
+        legend.title.position = "top",
+        legend.ticks = element_blank(),
+        legend.text = element_text(size = 8)
+      )
+    )
+  )
+
+my_plot <-
+  (p1 / p2) +
+  plot_layout(ncol = 1, heights = c(1, 3)) +
+  plot_annotation(
+    title = str_wrap(
+      str_c(
+        "**Tracking the Flames** The Escalation and Seasonality of Fires in the Amazon"
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      str_c(
+        "<br><br><span style='font-size:12px'>Total Fires (k)</span>"
+      ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE kaggle NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>"),
+    theme = theme(plot.margin = margin(25, 25, 25, 25))
+  )
+
+ggsave(
+  my_plot,
+  width = 4,
+  height = 5.5,
+  filename = "2026/images/day13.png"
+)
+```
