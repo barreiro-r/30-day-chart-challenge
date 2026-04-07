@@ -1,0 +1,272 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 12 - Distributions: FlowingData (Theme day)
+
+Reference: https://flowingdata.com/2026/03/23/cities-with-most-ice-arrests/
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+```{r}
+raw_data <- 
+  read_delim('2026/datasets/WID_Data_06042026-052616.csv', delim = ';', skip = 1) |>
+  janitor::clean_names()
+```
+
+
+### Preparing data for plot
+```{r}
+fix_country_names <- function(my_df) {
+  my_df |>
+    mutate(country = str_remove(country, ".*adults_equal_split_")) |>
+    filter(!str_detect(country, "world")) |>
+    filter(!str_detect(country, "_mer$")) |>
+    filter(!str_detect(country, "other")) |>
+    filter(!str_detect(country, "central")) |>
+    filter(!str_detect(country, "asia"))
+}
+
+to_select_contries <-
+  raw_data |>
+  filter(year %in% c(2000, 2020)) |>
+  pivot_longer(-c(year, percentile), names_to = "country") |>
+  fix_country_names() |>
+  pivot_wider(names_from = year, values_from = value) |>
+  filter(percentile == "p90p100") |>
+  mutate(delta = `2020` - `2000`)
+
+top_contries <- to_select_contries |>
+  slice_max(delta, n = 10) |>
+  mutate(rank = row_number(), top_or_bottom = "Increasing") |>
+  select(country, delta, rank, top_or_bottom) |>
+  mutate(color = case_when(
+    rank == 1 ~ colors_nizami["red"],
+    rank == 2 ~ colors_nizami["orange_light"],
+    rank == 3 ~ colors_nizami["yellow"],
+    TRUE ~ "#9c8e87ff"
+  ))
+
+bottom_contries <- to_select_contries |>
+  slice_min(delta, n = 20) |>
+  mutate(rank = row_number(), top_or_bottom = "Decreasing") |>
+  select(country, delta, rank, top_or_bottom) |>
+  mutate(color = case_when(
+    rank == 1 ~ colors_nizami["blue_dark"],
+    rank == 2 ~ colors_nizami["blue_light"],
+    rank == 3 ~ colors_nizami["teal_dark"],
+    TRUE ~ "#9c8e87ff"
+  ))
+
+data2plot <- raw_data |>
+  filter(year <= 2020, year >= 2000) |>
+  filter(percentile == "p90p100") |>
+  pivot_longer(-c(year, percentile), names_to = "country") |>
+  fix_country_names() |>
+  inner_join(bind_rows(top_contries, bottom_contries), by = "country") |>
+  mutate(country = str_to_title(country |> str_replace_all("_", " "))) |>
+  mutate(country = str_replace(country, "Usa", "United States"))
+```
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+my_plot <-
+  data2plot |>
+  ggplot(aes(x = year, y = value)) +
+  # internal grid
+  geom_segment(
+    data = tibble(value = seq(0.4, 0.8, 0.1)),
+    x = 2000 - 3,
+    xend = 2020,
+    color = warm_black,
+    linewidth = 0.5,
+    alpha = 0.1
+  ) +
+  geom_text(
+    data = tibble(value = seq(0.4, 0.8, 0.1)),
+    aes(label = percent(value)),
+    x = 2000 - 3,
+    color = warm_black,
+    size = 2.5,
+    hjust = 0,
+    vjust = -.4,
+    alpha = 0.5
+  ) +
+  # pltos
+  geom_line(
+    data = data2plot |> filter(rank >= 3),
+    aes(color = color, group = country),
+    linewidth = 0.25
+  ) +
+  geom_line(
+    data = data2plot |> filter(rank <= 3),
+    aes(group = country),
+    color = warm_white,
+    linewidth = 1.5
+  ) +
+  geom_line(
+    data = data2plot |> filter(rank <= 3),
+    aes(color = color, group = country),
+    linewidth = 0.5
+  ) +
+  ggrepel::geom_text_repel(
+    data = data2plot |> filter(rank <= 3) |> filter(year == 2020),
+    aes(label = country |> str_replace_all(" ", "\n"), color = color),
+    fontface = "bold",
+    hjust = 0,
+    nudge_x = 0.2,
+    direction = 'y',
+    force = 5,
+    vjust = .5,
+    force_pull = 1,
+    size = 3,
+    segment.size = 0,
+    lineheight = 0.9
+  ) +
+  facet_wrap(~top_or_bottom, ncol = 1) +
+  scale_x_continuous(expand = c(0, 3, 0.3, 0), breaks = seq(2000, 2020, by = 4)) +
+  scale_y_continuous(expand = c(0.2, 0, 0.2, 0)) +
+  scale_color_identity() +
+  theme(
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank(),
+    strip.text = element_markdown(hjust = 0, margin = margin(0, 0, 0, 0)),
+  ) +
+  labs(
+    fill = NULL,
+    y = NULL,
+    x = NULL,
+    title = str_wrap(
+      str_c(
+        "**Wealth Inequality Progress** Top 3 countries that increased or decreased their wealth share of the 10% of the most richest people"
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      str_c(
+        "<br><br><span style='font-size:12px'>% Shared Wealth</span>"
+      ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE wid NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>")
+  )
+my_plot
+ggsave(my_plot, width = 4, height = 5.5, filename = "2026/images/day12.png")
+```
