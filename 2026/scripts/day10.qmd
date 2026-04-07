@@ -178,7 +178,7 @@ my_plot <-
       str_replace_all("\n", "<br>"),
     caption = str_wrap(
       width = 65,
-      'SOURCE Tidytuesday 2015 NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+      'SOURCE Tidytuesday NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
     ) |>
       str_replace_all("\n", "<br>")
   )
