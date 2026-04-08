@@ -1,0 +1,293 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 15 - Relationship: Correlation
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+```{r}
+raw_data <-
+  tibble(
+    year = 2009:2021,
+    robbery_rate = c(
+      93.6,
+      83.2,
+      79.6,
+      86.3,
+      84.5,
+      85.3,
+      103.2,
+      114.6,
+      128.7,
+      121.9,
+      112.6,
+      97.4,
+      73.6
+    ),
+    professor_salary = c(
+      134915,
+      133892,
+      132719,
+      131745,
+      132028,
+      134443,
+      136755,
+      138492,
+      138746,
+      138826,
+      139640,
+      136906,
+      130262
+    )
+  )
+```
+
+
+### Preparing data for plot
+```{r}
+stats_data <- 
+  raw_data |>
+  pivot_longer(cols = c(robbery_rate, professor_salary)) |>
+  group_by(name) |>
+  summarise(
+    mean = mean(value),
+    sd = sd(value),
+    n = n()
+  )
+
+# Extract stats for Robbery Rate
+mean_rob <- stats_data$mean[stats_data$name == "robbery_rate"]
+sd_rob   <- stats_data$sd[stats_data$name == "robbery_rate"]
+
+# Extract stats for Professor Salary
+mean_sal <- stats_data$mean[stats_data$name == "professor_salary"]
+sd_sal   <- stats_data$sd[stats_data$name == "professor_salary"]
+
+
+data2plot <- 
+ raw_data |>
+  pivot_longer(cols = c(robbery_rate, professor_salary)) |>
+  group_by(name) |>
+  mutate(z_score = (value - mean(value)) / sd(value)) 
+
+```
+
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+pacman::p_load(patchwork)
+
+p1 <-
+  data2plot |>
+  ggplot(aes(x = year, y = z_score)) +
+  geom_line(aes(color = name), show.legend = FALSE) +
+  geom_point(color = warm_white, size = 2) +
+  geom_point(aes(color = name), size = 0.5, show.legend = FALSE) +
+  scale_y_continuous(
+    name = "Robbery Rate (per 100k)",
+    labels = function(x) round(x * sd_rob + mean_rob, 1),
+    sec.axis = sec_axis(
+      transform = ~.,
+      name = "Professor Salary",
+      labels = function(x) {
+        label_dollar(scale_cut = cut_short_scale())(x * sd_sal + mean_sal)
+      }
+    )
+  ) +
+  scale_color_manual(
+    values = c(
+      "robbery_rate" = colors_nizami[["red"]],
+      "professor_salary" = colors_nizami[["blue"]]
+    )
+  ) +
+  theme(
+    panel.grid.major.y = element_line(color = 'grey80', linewidth = .3),
+    axis.text.y.left = element_text(color = colors_nizami[["red"]]),
+    axis.text.y.right = element_text(color = colors_nizami[["blue"]]),
+    axis.title.y.left = element_text(
+      color = colors_nizami[["red"]],
+      margin = margin(0, 0, 0, 10)
+    ),
+    axis.title.y.right = element_text(color = colors_nizami[["blue"]]),
+    plot.margin = margin(10, 0, 10, 0)
+  ) +
+  labs(x = NULL)
+
+p2 <-
+  data2plot |>
+  select(-z_score) |>
+  pivot_wider(names_from = name, values_from = value) |>
+  ggplot(aes(y = robbery_rate, x = professor_salary)) +
+  geom_smooth(
+    method = 'lm',
+    se = FALSE,
+    color = colors_nizami[["red"]],
+    linewidth = 0.5
+  ) +
+  geom_point(size = 1, show.legend = FALSE, color = warm_black) +
+  scale_x_continuous(
+    label = label_dollar(scale_cut = cut_short_scale())
+  ) +
+  labs(x = "Professor Salary", y = "Robbery Rate (per 100k)") +
+  theme(
+    axis.title.y = element_markdown(
+      margin = margin(0, 0, 0, 10),
+      color = colors_nizami[["red"]]
+    ),
+    axis.title.x = element_markdown(
+      margin = margin(10, 0, 0, 0),
+      color = colors_nizami[["blue"]]
+    ),
+    axis.text.y = element_markdown(
+      color = colors_nizami[["red"]]
+    ),
+    axis.text.x = element_markdown(
+      color = colors_nizami[["blue"]]
+    ),
+    panel.grid.major.y = element_line(color = 'grey80', linewidth = .3),
+    plot.margin = margin(10, 0, 0, 0)
+  )
+
+my_plot <-
+  (p1 / p2) +
+  plot_layout(ncol = 1, heights = c(1, 1)) +
+  plot_annotation(
+    title = str_wrap(
+      str_c(
+        "**Robberies in Alaska & Professor salaries in the US** The financial destinies of educators nationwide are
+astoundingly twined with the shenanigans unfolding amidst the
+Alaskan tundra."
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE tylervigen.com NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>"),
+  )
+
+ggsave(
+  my_plot,
+  width = 4,
+  height = 5.5,
+  filename = "2026/images/day15.png"
+)
+```
