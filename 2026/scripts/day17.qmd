@@ -10,7 +10,7 @@ output:
 ---
 
 # 30 Day Chart Challenge 2026
-## Day 17 - Relationship: Remake
+## Day 18 - Relationship: UNICEF (dataday)
 
 ### Load libraries & Set Themes
 ```{r}
@@ -68,8 +68,8 @@ theme_set(
       panel.grid.minor = element_blank(),
       axis.ticks.length = unit(-0.15, "cm"),
       plot.background = element_rect(fill = warm_white),
-      plot.title.position = "plot",
-      plot.caption.position = "plot",
+    #   plot.title.position = "plot",
+    #   plot.caption.position = "plot",
       plot.title = element_markdown(
         family = "Hanken Grotesk",
         size = 12,
@@ -121,26 +121,75 @@ theme_set(
 
 ### Read raw data
 
-Original: https://github.com/barreiro-r/tidytuesday/tree/main/legacy/2021-08-10_bea
+Original: https://data.unicef.org/resources/dataset/nutrition-school-children-adolescents/
 ```{r}
 # Loading data
-tuesdata <- tidytuesdayR::tt_load('2021-08-10')
+pacman::p_load(readxl)
+
+header <-
+  read_excel(
+    "2026/datasets/UNICEF_Global-database_SACA_obesity_August-2025-V2.xlsx",
+    sheet = "5to9",
+    skip = 6,
+    range = "B7:EN9",
+    col_names = FALSE
+  ) |>
+  t() |>
+  as.tibble(stringsAsFactors = FALSE) |>
+  fill(V1, V2, .direction = "down") |>
+  transmute(
+    combined_name = paste(V1, V2, V3, sep = "-") |> str_remove_all("-NA")
+  ) |>
+  pull(combined_name)
+
+raw_data <-
+  read_excel(
+    "2026/datasets/UNICEF_Global-database_SACA_obesity_August-2025-V2.xlsx",
+    sheet = "5to9",
+    skip = 10,
+    col_names = FALSE
+  ) |>
+  set_names(header) |>
+  pivot_longer(
+    cols = starts_with('2'),
+    names_to = 'name',
+    values_to = 'value'
+  ) |>
+  mutate(name = str_remove(name, 'x')) |>
+  separate(
+    name,
+    into = c('year', 'sex', 'estimator'),
+    sep = '-',
+    convert = TRUE
+  ) |>
+  janitor::clean_names() |>
+  mutate(
+    estimator = snakecase::to_snake_case(estimator),
+    sex = snakecase::to_snake_case(sex)
+  ) 
 ```
 
 
 ### Preparing data for plot
 ```{r}
 data2plot <-
-  tuesdata$investment %>%
-  filter(year > 2000, year <= 2020) %>%
-  filter(
-    category %in% c('Federal', 'Private') & !str_detect(meta_cat, 'Total')
+  raw_data |>
+  filter(estimator == 'point_estimate') |>
+  filter(sex %in% c('females', 'males')) |>
+  filter(world_bank_income_groups != "Not Classified") |>
+  mutate(
+    world_bank_income_groups = factor(
+      world_bank_income_groups,
+      levels = c(
+        "High Income",
+        "Upper Middle Income",
+        "Lower Middle Income",
+        "Low Income"
+      )
+    )
   ) |>
-  group_by(category, group_num, meta_cat) |>
-  summarise(gross_inv = sum(gross_inv)) |>
-  group_by(meta_cat) |>
-  mutate(per = gross_inv / sum(gross_inv)) |>
-  ungroup()
+group_by(world_bank_income_groups, year, sex, estimator) |>
+  summarise(value = mean(as.numeric(value), na.rm = TRUE), .groups = "drop")
 ```
 
 
@@ -148,51 +197,64 @@ data2plot <-
 ```{r fig.showtext=TRUE}
 pacman::p_load(patchwork)
 
-order <-
-  data2plot |>
-  select(category, meta_cat, per) |>
-  pivot_wider(names_from = category, values_from = per) |>
-  mutate(Private = if_else(is.na(Private), 0, Private)) |>
-  arrange(desc(Private)) |>
-  pull(meta_cat)
-
 my_plot <-
   data2plot |>
-  mutate(meta_cat = factor(meta_cat, levels = order)) |>
-  ggplot(aes(x = per, y = meta_cat)) +
-  geom_col(
-    aes(fill = category),
-    position = 'stack',
-    show.legend = FALSE,
-    width = 1
-  ) +
-  facet_wrap(~meta_cat, ncol = 1, scales = 'free_y') +
-  scale_x_continuous(expand = c(0, 0), labels = scales::percent) +
-  theme(
-    axis.text.y = element_blank(),
-    strip.text = element_text(size = 8, hjust = 0, margin = margin(0, 0, 5, 0)),
-    axis.title.y = element_blank()
-  ) +
-  scale_fill_manual(
-    values = c(
-      'Private' = colors_nizami[["blue"]],
-      'Federal' = colors_nizami[["yellow"]]
+  ggplot(aes(x = year, y = value, color = world_bank_income_groups)) +
+  geom_line(
+    aes(
+      group = interaction(world_bank_income_groups, sex),
+      color = sex,
+      alpha = world_bank_income_groups,
     ),
-    labels = c('Private', 'Federal')
+    show.legend = FALSE
+  ) +
+  geom_point(color = warm_white, size = 1) +
+  geom_point(
+    aes(color = sex, alpha = world_bank_income_groups),
+    size = 1,
+    shape = 21
+  ) +
+  scale_alpha_manual(
+    values = rev(c(0.25, 0.5, 0.75, 1)),
+    label = ~ . |> str_remove(" Income")
+  ) +
+  scale_color_manual(
+    values = c(
+      "females" = colors_nizami[["red"]],
+      "males" = colors_nizami[["blue"]]
+    )
+  ) +
+  scale_y_continuous(labels = function(x) scales::percent(x / 100)) +
+  facet_wrap(~sex) +
+  theme(
+    panel.grid.major.y = element_line(color = 'grey80', linewidth = .3),
+    strip.text = element_markdown(
+      hjust = 0,
+      size = 12,
+      color = warm_black,
+      margin = margin(0, 0, 0, 0)
+    ),
+    legend.justification = "left",
+    legend.margin = margin(0, 0, 0, 0),
+    legend.box.margin = margin(0, 0, 0, 0),
+    legend.spacing = unit(0, "cm"),
+    legend.key.spacing   = unit(0.1, "cm"),
+    legend.key.width     = unit(0, "cm"),
   ) +
   labs(
+    alpha = "Income",
     x = NULL,
     y = NULL,
     fill = NULL,
     title = str_wrap(
       str_c(
-        "**Funding the Foundation** The split between Private and Federal infrastructure spending from 2000 to 2020"
+        "**UNICEF's Global database on school-age children and adolescents' nutrition** Childs from 5 to 9 years of age, last updated in 2025"
       ),
       width = 45,
       whitespace_only = FALSE
     ) |>
       glue::glue(
-        "<br><br><span style='font-size:12px'>% of investiments (<span style='color:{colors_nizami[['blue']]}'>Private</span> / <span style='color:{colors_nizami[['yellow']]}'>Federal</span>)</span>"
+        "<br><br><span style='font-size:12px'>% of child with obesity</span>"
       ) |>
       str_replace_all("\n", "<br>"),
     caption = str_wrap(
@@ -200,12 +262,19 @@ my_plot <-
       'SOURCE Bureau of Economic Analysis / TidyTuesday NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
     ) |>
       str_replace_all("\n", "<br>"),
+  ) +
+  guides(
+    color = "none",
+    alpha = guide_legend(
+      position = "bottom",
+      override.aes = list(shape = 16),
+    )
   )
 
 ggsave(
   my_plot,
   width = 4,
   height = 5.5,
-  filename = "2026/images/day17.png"
+  filename = "2026/images/day18.png"
 )
 ```
