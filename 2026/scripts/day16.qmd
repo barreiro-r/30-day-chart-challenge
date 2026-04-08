@@ -1,0 +1,313 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 16 - Relationship: Causation
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+
+Data from:
+- Vacination Coverage: https://ourworldindata.org/new-polio-vaccines-are-key-to-preventing-outbreaks-and-achieving-eradication
+- Polio Rates: https://ourworldindata.org/global-fight-polio
+```{r}
+
+raw_data_vaccination_coverage <- 
+  read_csv('2026/datasets/polio-vaccine-coverage-of-one-year-olds.csv') 
+
+raw_data_polio_rates <- 
+  read_csv('2026/datasets/number-of-estimated-paralytic-polio-cases-by-world-region.csv')
+```
+
+
+### Preparing data for plot
+```{r}
+data2plot <-
+  full_join(
+    raw_data_vaccination_coverage |>
+      janitor::clean_names() |>
+      filter(str_detect(entity, 'World')) |>
+      select(-code, -entity),
+    raw_data_polio_rates |>
+      janitor::clean_names() |>
+      filter(str_detect(entity, 'World')) |>
+      select(-code, -entity),
+    by = 'year'
+  ) |>
+  rename(
+    vac_cov = "polio_pol3",
+    pol_case = "estimated_polio_cases"
+  )
+
+
+stats_data <-
+  data2plot |>
+  pivot_longer(cols = c(vac_cov, pol_case)) |>
+  group_by(name) |>
+  summarise(
+    mean = mean(value, na.rm = TRUE),
+    sd = sd(value, na.rm = TRUE),
+    n = n(),
+    min = min(value, na.rm = TRUE),
+    max = max(value, na.rm = TRUE),
+  )
+
+stats_list <- list(
+  mean_vac_cov = stats_data$mean[stats_data$name == "vac_cov"],
+  sd_vac_cov = stats_data$sd[stats_data$name == "vac_cov"],
+  min_vac_cov = stats_data$min[stats_data$name == "vac_cov"],
+  max_vac_cov = stats_data$max[stats_data$name == "vac_cov"],
+  mean_pol_case = stats_data$mean[stats_data$name == "pol_case"],
+  sd_pol_case = stats_data$sd[stats_data$name == "pol_case"],
+  min_pol_case = stats_data$min[stats_data$name == "pol_case"],
+  max_pol_case = stats_data$max[stats_data$name == "pol_case"]
+)
+
+data2plot <-
+  data2plot |>
+  pivot_longer(cols = c(vac_cov, pol_case)) |>
+  group_by(name) |>
+  mutate(
+    min_max = (value - min(value, na.rm = TRUE)) /
+      (max(value, na.rm = TRUE) - min(value, na.rm = TRUE)),
+    z_score = (value - mean(value, na.rm = TRUE)) /
+      sd(value, na.rm = TRUE)
+  )
+```
+
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+pacman::p_load(patchwork)
+
+p1 <-
+  data2plot |>
+  ggplot(aes(x = year, y = min_max)) +
+  geom_line(aes(color = name), show.legend = FALSE) +
+  geom_point(color = warm_white, size = 2) +
+  geom_point(aes(color = name), size = 0.5, show.legend = FALSE) +
+  scale_y_continuous(
+    name = "Vaccination Coverage",
+    labels = function(x) {
+      unscaled_x <- round(
+        x *
+          (stats_list[["max_vac_cov"]] - stats_list[["min_vac_cov"]]) +
+          stats_list[["min_vac_cov"]],
+        1
+      )
+
+      scales::percent(unscaled_x / 100)
+    },
+    sec.axis = sec_axis(
+      transform = ~.,
+      name = "Polio Cases",
+      labels = function(x) {
+        unscaled_x <- x *
+          (stats_list[["max_pol_case"]] - stats_list[["min_pol_case"]]) +
+          stats_list[["min_pol_case"]]
+        scales::label_number(
+          scale_cut = scales::cut_short_scale(),
+          accuracy = 1
+        )(unscaled_x)
+      }
+    )
+  ) +
+  scale_color_manual(
+    values = c(
+      "pol_case" = colors_nizami[["red"]],
+      "vac_cov" = colors_nizami[["blue"]]
+    )
+  ) +
+  theme(
+    panel.grid.major.y = element_line(color = 'grey80', linewidth = .3),
+    axis.text.y.right = element_text(color = colors_nizami[["red"]]),
+    axis.text.y.left = element_text(color = colors_nizami[["blue"]]),
+    axis.title.y.right = element_text(
+      color = colors_nizami[["red"]],
+      margin = margin(0, 0, 0, 10)
+    ),
+    axis.title.y.left = element_text(color = colors_nizami[["blue"]], margin = margin(0, 10, 0, 0)),
+    plot.margin = margin(10, 0, 10, 0)
+  ) +
+  labs(x = NULL)
+
+p2 <-
+  data2plot |>
+  select(-z_score, -min_max) |>
+  pivot_wider(names_from = name, values_from = value) |>
+  ggplot(aes(y = vac_cov, x = pol_case)) +
+  geom_smooth(
+    method = 'lm',
+    se = FALSE,
+    color = colors_nizami[["red"]],
+    linewidth = 0.5
+  ) +
+  geom_point(size = 1, show.legend = FALSE, color = warm_black) +
+  scale_x_continuous(
+    label = label_number(scale_cut = cut_short_scale())
+  ) +
+  scale_y_continuous(
+    labels = function(x) {
+      scales::percent(x / 100)
+    }
+  ) +
+  labs(x = "Polio Cases", y = "Vaccination Coverage") +
+  theme(
+    axis.title.x = element_markdown(
+      margin = margin(10, 0, 0, 10),
+      color = colors_nizami[["red"]]
+    ),
+    axis.title.y = element_markdown(
+      margin = margin(10, 0, 0, 0),
+      color = colors_nizami[["blue"]]
+    ),
+    axis.text.x = element_markdown(
+      color = colors_nizami[["red"]]
+    ),
+    axis.text.y = element_markdown(
+      color = colors_nizami[["blue"]]
+    ),
+    panel.grid.major.y = element_line(color = 'grey80', linewidth = .3),
+    plot.margin = margin(10, 0, 0, 0)
+  )
+
+my_plot <-
+  (p1 / p2) +
+  plot_layout(ncol = 1, heights = c(1, 1)) +
+  plot_annotation(
+    title = str_wrap(
+      str_c(
+        "**Vaccines works** How rising global vaccination rates among one-year-olds directly correlate with the decline of paralytic cases."
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE our world in data NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>"),
+  )
+
+ggsave(
+  my_plot,
+  width = 4,
+  height = 5.5,
+  filename = "2026/images/day16.png"
+)
+```
