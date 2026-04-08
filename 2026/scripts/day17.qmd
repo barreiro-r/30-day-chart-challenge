@@ -1,0 +1,211 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 17 - Relationship: Remake
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+
+Original: https://github.com/barreiro-r/tidytuesday/tree/main/legacy/2021-08-10_bea
+```{r}
+# Loading data
+tuesdata <- tidytuesdayR::tt_load('2021-08-10')
+```
+
+
+### Preparing data for plot
+```{r}
+data2plot <-
+  tuesdata$investment %>%
+  filter(year > 2000, year <= 2020) %>%
+  filter(
+    category %in% c('Federal', 'Private') & !str_detect(meta_cat, 'Total')
+  ) |>
+  group_by(category, group_num, meta_cat) |>
+  summarise(gross_inv = sum(gross_inv)) |>
+  group_by(meta_cat) |>
+  mutate(per = gross_inv / sum(gross_inv)) |>
+  ungroup()
+```
+
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+pacman::p_load(patchwork)
+
+order <-
+  data2plot |>
+  select(category, meta_cat, per) |>
+  pivot_wider(names_from = category, values_from = per) |>
+  mutate(Private = if_else(is.na(Private), 0, Private)) |>
+  arrange(desc(Private)) |>
+  pull(meta_cat)
+
+my_plot <-
+  data2plot |>
+  mutate(meta_cat = factor(meta_cat, levels = order)) |>
+  ggplot(aes(x = per, y = meta_cat)) +
+  geom_col(
+    aes(fill = category),
+    position = 'stack',
+    show.legend = FALSE,
+    width = 1
+  ) +
+  facet_wrap(~meta_cat, ncol = 1, scales = 'free_y') +
+  scale_x_continuous(expand = c(0, 0), labels = scales::percent) +
+  theme(
+    axis.text.y = element_blank(),
+    strip.text = element_text(size = 8, hjust = 0, margin = margin(0, 0, 5, 0)),
+    axis.title.y = element_blank()
+  ) +
+  scale_fill_manual(
+    values = c(
+      'Private' = colors_nizami[["blue"]],
+      'Federal' = colors_nizami[["yellow"]]
+    ),
+    labels = c('Private', 'Federal')
+  ) +
+  labs(
+    x = NULL,
+    y = NULL,
+    fill = NULL,
+    title = str_wrap(
+      str_c(
+        "**Funding the Foundation** The split between Private and Federal infrastructure spending from 2000 to 2020"
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      glue::glue(
+        "<br><br><span style='font-size:12px'>% of investiments (<span style='color:{colors_nizami[['blue']]}'>Private</span> / <span style='color:{colors_nizami[['yellow']]}'>Federal</span>)</span>"
+      ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE Bureau of Economic Analysis / TidyTuesday NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>"),
+  )
+
+ggsave(
+  my_plot,
+  width = 4,
+  height = 5.5,
+  filename = "2026/images/day17.png"
+)
+```
