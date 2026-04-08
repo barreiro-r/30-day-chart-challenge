@@ -12,8 +12,6 @@ output:
 # 30 Day Chart Challenge 2026
 ## Day 14 - Relationship: Trade
 
-Reference: https://flowingdata.com/2026/03/23/cities-with-most-ice-arrests/
-
 ### Load libraries & Set Themes
 ```{r}
 #| label: Load libraries & Set Themes
