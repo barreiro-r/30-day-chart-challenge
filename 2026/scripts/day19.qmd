@@ -10,7 +10,7 @@ output:
 ---
 
 # 30 Day Chart Challenge 2026
-## Day 17 - Relationship: Remake
+## Day 19 - Timeseries: Evolution
 
 ### Load libraries & Set Themes
 ```{r}
@@ -121,91 +121,133 @@ theme_set(
 
 ### Read raw data
 
-Original: https://github.com/barreiro-r/tidytuesday/tree/main/legacy/2021-08-10_bea
+Original: https://data.unicef.org/resources/dataset/nutrition-school-children-adolescents/
 ```{r}
 # Loading data
-tuesdata <- tidytuesdayR::tt_load('2021-08-10')
+raw_data <- tidytuesdayR::tt_load('2025-08-26')
 ```
 
 
 ### Preparing data for plot
 ```{r}
+top_lyrical_topic <-
+  raw_data$billboard |>
+  separate_rows(lyrical_topic, sep = ";") |>
+  count(lyrical_topic) |>
+  filter(!is.na(lyrical_topic)) |>
+  slice_max(n, n = 9) |>
+  pull(lyrical_topic) |>
+  unique()
+
+
 data2plot <-
-  tuesdata$investment %>%
-  filter(year > 2000, year <= 2020) %>%
-  filter(
-    category %in% c('Federal', 'Private') & !str_detect(meta_cat, 'Total')
-  ) |>
-  group_by(category, group_num, meta_cat) |>
-  summarise(gross_inv = sum(gross_inv)) |>
-  group_by(meta_cat) |>
-  mutate(per = gross_inv / sum(gross_inv)) |>
-  ungroup()
+  raw_data$billboard |>
+  mutate(year = year(date)) |>
+  select(lyrical_topic, year) |>
+  separate_rows(lyrical_topic, sep = ";") |>
+  mutate(lyrical_topic = fct_lump(lyrical_topic, 9)) |>
+  filter(!is.na(lyrical_topic))
 ```
 
 
 ### Time for plotting
 ```{r fig.showtext=TRUE}
-pacman::p_load(patchwork)
+# df_midpoints <-
+#   data2plot |>
+#   group_by(lyrical_topic) |>
+#   summarise(count = n()) |>
+#   ungroup() |>
+#   mutate(percentage = count / sum(count)) |>
+#   arrange(desc(lyrical_topic)) |>
+#   mutate(
+#     stack_top = cumsum(percentage),
+#     label_y_position = stack_top - (0.5 * percentage)
+#   ) |>
+#   ungroup() |>
+#   group_by(lyrical_topic) |>
+#   select(lyrical_topic, label_y_position)
 
-order <-
-  data2plot |>
-  select(category, meta_cat, per) |>
-  pivot_wider(names_from = category, values_from = per) |>
-  mutate(Private = if_else(is.na(Private), 0, Private)) |>
-  arrange(desc(Private)) |>
-  pull(meta_cat)
+df_midpoints <- tribble(
+  ~lyrical_topic      , ~label_y_position ,
+  "Bad Relationships" , 0.98              ,
+  "Bragging"          , 0.94              ,
+  "Dancing"           , 0.88              ,
+  "Empowerment"       , 0.80              ,
+  "Longing for Love"  , 0.70              ,
+  "Lost Love"         , 0.50             ,
+  "Love"              , 0.30              ,
+  "Lust/Sex"          , 0.22              ,
+  "Partying"          , 0.18              ,
+  "Other"             , 0.08
+)
 
-my_plot <-
-  data2plot |>
-  mutate(meta_cat = factor(meta_cat, levels = order)) |>
-  ggplot(aes(x = per, y = meta_cat)) +
-  geom_col(
-    aes(fill = category),
-    position = 'stack',
-    show.legend = FALSE,
-    width = 1
+df_midpoints$color <- c(colors_nizami, "#cccccc")
+
+df_midpoints <-
+  df_midpoints |>
+  mutate(
+    label = glue::glue("<span style='color:{color}'>{lyrical_topic}</span> ")
+  )
+
+my_plot <- 
+data2plot |>
+  ggplot(aes(x = year)) +
+  geom_density(
+    aes(fill = lyrical_topic),
+    alpha = .8,
+    position = "fill",
+    color = warm_black,
+    adjust = 1 / 2,
+    show.legend = FALSE
   ) +
-  facet_wrap(~meta_cat, ncol = 1, scales = 'free_y') +
-  scale_x_continuous(expand = c(0, 0), labels = scales::percent) +
+  scale_fill_discrete(
+    palette = c(colors_nizami, "#CCC")
+  ) +
+  scale_x_continuous(
+    expand = c(0, 0),
+  ) +
+  scale_y_continuous(
+    expand = c(0, 0),
+    breaks = df_midpoints$label_y_position,
+    labels = df_midpoints$label
+  ) +
   theme(
-    axis.text.y = element_blank(),
-    strip.text = element_text(size = 8, hjust = 0, margin = margin(0, 0, 5, 0)),
-    axis.title.y = element_blank()
-  ) +
-  scale_fill_manual(
-    values = c(
-      'Private' = colors_nizami[["blue"]],
-      'Federal' = colors_nizami[["yellow"]]
-    ),
-    labels = c('Private', 'Federal')
+    axis.text.y.left = element_markdown(
+      size = 8,
+    )
   ) +
   labs(
     x = NULL,
     y = NULL,
-    fill = NULL,
     title = str_wrap(
       str_c(
-        "**Funding the Foundation** The split between Private and Federal infrastructure spending from 2000 to 2020"
+        "**More Bragging and Less Love.** Lyrical topics of Billboard Hot 100 songs evolution"
       ),
       width = 45,
       whitespace_only = FALSE
     ) |>
       glue::glue(
-        "<br><br><span style='font-size:12px'>% of investiments (<span style='color:{colors_nizami[['blue']]}'>Private</span> / <span style='color:{colors_nizami[['yellow']]}'>Federal</span>)</span>"
+        "<br><br><span style='font-size:12px'>% lyrical topic</span>"
       ) |>
       str_replace_all("\n", "<br>"),
     caption = str_wrap(
       width = 65,
-      'SOURCE Bureau of Economic Analysis / TidyTuesday NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+      'SOURCE tidytuesday NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
     ) |>
       str_replace_all("\n", "<br>"),
+  ) +
+  guides(
+    color = "none",
+    alpha = guide_legend(
+      position = "bottom",
+      override.aes = list(shape = 16),
+    )
   )
 
 ggsave(
   my_plot,
   width = 4,
   height = 5.5,
-  filename = "2026/images/day17.png"
+  filename = "2026/images/day19.png"
 )
 ```
