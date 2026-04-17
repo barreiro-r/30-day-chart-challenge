@@ -1,0 +1,227 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 22 - Timeseries: New Tool
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+
+Original: https://data.unicef.org/resources/dataset/nutrition-school-children-adolescents/
+```{r}
+# Loading data
+raw_data <- read_csv('2026/datasets/2018-2019_Daily_Attendance_20240429.csv') |>
+  janitor::clean_names()
+```
+
+
+### Preparing data for plot
+```{r}
+# to filter top absent schools
+top_absent_schools <- raw_data |>
+  filter(!is.na(school_dbn)) |>
+  group_by(school_dbn) |>
+  summarise(
+    absent = sum(absent),
+    present = sum(present),
+    .groups = "drop"
+  ) |>
+  slice_max(absent, n = 4) |>
+  pull(school_dbn)
+
+data2plot <-
+  raw_data |>
+  filter(school_dbn %in% top_absent_schools) |>
+  mutate(
+    date_string = date,
+    date = ymd(date_string |> str_replace_all("2018", "2019"))
+  ) |>
+  mutate(absent = absent / (absent + present)) |>
+  select(school_dbn, date, absent) |>
+  group_by(school_dbn) |>
+  complete(
+    date = seq.Date(min(date), max(date), by = "day"),
+    fill = list(absent = 0)
+  ) |>
+  mutate(absent = if_else(absent == 0, NA_real_, absent)) |>
+  mutate(absent = if_else(absent > 0.2, 0.2, absent)) |>
+  arrange(desc(absent))
+```
+
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+
+# devtools::install_github('Ather-Energy/ggTimeSeries')
+pacman::p_load(ggTimeSeries)
+
+my_plot <-
+  data2plot |>
+  ggplot_calendar_heatmap(
+    cDateColumnName = "date",
+    cValueColumnName = "absent",
+    dayBorderColour = warm_white,
+    monthBorderSize = 1 ,
+    monthBorderColour = warm_white,	
+    monthBorderLineEnd = "round"
+  ) +
+  facet_wrap(~school_dbn, ncol = 1) +
+  scale_fill_gradientn(
+    colours = colors_nizami |> rev(),
+    na.value = "#d9d4cc",
+    label = percent,
+    breaks = seq(0, 0.2, by = 0.05),
+    limits = c(0, 0.2)
+  ) +
+  labs(
+    x = NULL,
+    y = NULL,
+    fill = "Absences",
+    title = str_wrap(
+      glue::glue(
+        "**School absences** Top 4 schools with the highest absences in 2018 by School DBN"
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |> str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE kaggle NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>"),
+  )  +
+  guides(
+    fill = guide_colorbar(
+      theme = theme(
+        legend.key.width = unit(8, "lines"),
+        legend.key.height = unit(0.2, "lines"),
+        legend.title = element_markdown(size = 8),
+        legend.title.position = "top",
+        legend.ticks = element_blank(),
+        legend.text = element_text(size = 8)
+      )
+    )
+  ) +
+  theme(axis.text.y = element_markdown(size = ))
+
+ggsave(
+  my_plot,
+  width = 4,
+  height = 5.5,
+  filename = "2026/images/day22.png"
+)
+```
