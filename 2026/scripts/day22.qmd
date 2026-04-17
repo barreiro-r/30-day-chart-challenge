@@ -148,7 +148,8 @@ data2plot <-
   filter(school_dbn %in% top_absent_schools) |>
   mutate(
     date_string = date,
-    date = ymd(date_string |> str_replace_all("2018", "2019"))
+    date = ymd(date_string),
+    date = if_else(year(date) == 2019, date, date - days(1)+years(1))
   ) |>
   mutate(absent = absent / (absent + present)) |>
   select(school_dbn, date, absent) |>
