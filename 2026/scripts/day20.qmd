@@ -1,0 +1,218 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 20 - Timeseries: Global Trend
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+
+Original: https://data.unicef.org/resources/dataset/nutrition-school-children-adolescents/
+```{r}
+# Loading data
+raw_data <- read_csv('2026/datasets/number-of-internet-users.csv') |>
+  janitor::clean_names()
+```
+
+
+### Preparing data for plot
+```{r}
+# I need yearly population data, but no time for this.
+region_population <- tribble(
+  ~entity,         ~population,
+  "World",         8196980849,
+  "Asia",          4863327395,
+  "Africa",        1584985258,
+  "Europe",         741646655,
+  "North America",  621279953,
+  "South America",  440484431,
+  "Oceania",         47118994
+)
+
+sup_data <- region_population |>
+  mutate(color = colors_nizami[1:length(region_population$entity)]) |>
+  mutate(label = glue::glue("<span style='color:{color}'>{entity}</span>")) |>
+  mutate(color = if_else(entity == "World", warm_black, color))
+
+data2plot <- 
+  raw_data |>
+  inner_join(sup_data, by = "entity") |>
+  mutate(per_number_of_internet_users = number_of_internet_users / population)
+```
+
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+my_plot <- 
+data2plot |>
+  ggplot(aes(x = year, y = per_number_of_internet_users)) +
+  geom_line(data = subset(data2plot, entity != "World"), aes(color = entity), show.legend = FALSE) +
+  geom_line(data = subset(data2plot, entity == "World"), aes(color = entity), linewidth = 1.5, lineend = "round", show.legend = FALSE) +
+  ggrepel::geom_text_repel(
+    data = subset(data2plot, year == max(year)),
+    aes(label = glue::glue("{percent(per_number_of_internet_users, accuracy = 1)}\n{entity}"), y = per_number_of_internet_users, group = entity, color = entity),
+    size = 2.5,
+    hjust = 0,
+    direction = "y",
+    nudge_x = 1,
+    box.padding = 0.2, 
+    point.padding = .1,
+    force = 5,
+    show.legend = FALSE,
+    lineheight = 0.8,
+    segment.size = 0,
+    # min.segment.length = 4
+  ) +
+  scale_x_continuous(
+    breaks = seq(min(data2plot$year), max(data2plot$year), 5),
+    lim = c(min(data2plot$year), max(data2plot$year)+10)
+  ) +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = str_wrap(
+      glue::glue(
+        "**Half of the population has access to the internet** In 2020 {data2plot |> filter(year == max(year), entity == 'World') |> mutate( number_of_internet_users = number_of_internet_users/ 1e9) |> pull(number_of_internet_users) |> comma(accuracy = 0.01)} billion people had access to the internet"
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      glue::glue(
+        "<br><br><span style='font-size:12px'>% internet users</span>"
+      ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE tidytuesday NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>"),
+  ) +
+  scale_color_manual(
+    values = sup_data |> select(entity, color) |> deframe()
+  ) +
+  scale_y_continuous(
+    labels = scales::percent_format(accuracy = 1),
+    limits = c(0, 1)
+  ) 
+
+ggsave(
+  my_plot,
+  width = 4,
+  height = 5.5,
+  filename = "2026/images/day20.png"
+)
+```
