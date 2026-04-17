@@ -216,7 +216,7 @@ my_plot <-
       )
     )
   ) +
-  theme(axis.text.y = element_markdown(size = ))
+  theme(axis.text.y = element_markdown(size = 4.5))
 
 ggsave(
   my_plot,
