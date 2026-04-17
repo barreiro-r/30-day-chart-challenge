@@ -1,0 +1,225 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 21 - Timeseries: Historical
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+
+Original: https://data.unicef.org/resources/dataset/nutrition-school-children-adolescents/
+```{r}
+# Loading data
+raw_data <- read_csv('2026/datasets/IHME-GBD_2023_DATA-76fd65ac-1.csv') |>
+  janitor::clean_names()
+```
+
+
+### Preparing data for plot
+```{r}
+# I need yearly population data, but no time for this.
+
+data2plot <- 
+  raw_data |>
+  filter(metric == "Number") |>
+  select(cause, year, val) |>
+  pivot_wider(names_from = cause, values_from = val) |>
+  mutate(`Non Injuries` = `Non-communicable diseases` + `Communicable, maternal, neonatal, and nutritional diseases` - `Injuries`) |>
+  pivot_longer(cols = -year, names_to = "cause", values_to = "val")
+```
+
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+pacman::p_load(ggpattern)
+
+my_plot <-
+  data2plot |>
+  ggplot(aes(x = year, y = val)) +
+  geom_col(
+    data = subset(data2plot, cause == "All causes"),
+    fill = warm_black,
+    position = "identity",
+    alpha = 0.1,
+    color = warm_black,
+    width = 1,
+  ) +
+  geom_col(
+    data = subset(data2plot, cause == "Non-communicable diseases"),
+    fill = colors_nizami[["teal"]],
+    alpha = 1,
+    width = 1,
+    position = "identity",
+    color = warm_black,
+  ) +
+  geom_col(
+    data = subset(data2plot, cause == "Communicable, maternal, neonatal, and nutritional diseases"),
+    fill = colors_nizami[["orange_dark"]],
+    alpha = 1,
+    width = 1,
+    position = "identity",
+    color = warm_black,
+  ) +
+  # ggpattern::geom_col_pattern(
+  #   data = subset(
+  #     data2plot,
+  #     cause == "Communicable, maternal, neonatal, and nutritional diseases"
+  #   ),
+  #   pattern_color = warm_white,
+  #   width = 1,
+  #   fill = NA,
+  #   pattern_spacing = 0.015,
+  #   pattern_size = 0.1,
+  #   pattern_angle = 45
+  # ) +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = str_wrap(
+      glue::glue(
+        "**Deaths in Brazil** Due to non-communicable diseases and communicable diseases"
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      glue::glue(
+        "<br><br><span style='font-size:12px'>Number of deaths<br>(<span style='color:#CCC'>all causes</span>, <span style='color:{colors_nizami[[\"teal_dark\"]]}'>non-communicable diseases</span>, <span style='color:{colors_nizami[[\"orange_dark\"]]}'>communicable</span>)</span>"
+      ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE ihme NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>"),
+  ) +
+  coord_polar() +
+  scale_x_continuous(
+    breaks = seq(min(data2plot$year), max(data2plot$year), 1),
+  ) +
+  scale_y_continuous(
+    expand = c(0, 0, 0.2, 0),
+  ) +
+  theme(axis.text.y = element_blank(),
+  plot.margin = margin(25, 55, 25, 25))
+
+ggsave(
+  my_plot,
+  width = 4,
+  height = 5.5,
+  filename = "2026/images/day21.png"
+)
+```
