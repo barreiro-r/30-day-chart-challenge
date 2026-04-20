@@ -1,0 +1,1 @@
+downloaded from: https://ourworldindata.org/explorers/influenza?overlay=download-data&Confirmed+cases+or+Symptoms=Confirmed+cases&Metric=All+influenza+strains&Interval=Monthly&Surveillance+type=All+types&country=OWID_NH~OWID_SH
