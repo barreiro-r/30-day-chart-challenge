@@ -200,6 +200,7 @@ my_plot <-
     legend.title = element_markdown(size = 8),
     legend.text = element_markdown(size = 7),
     legend.key.spacing = unit(0.1, "lines"),
+    legend.location = "plot",
   ) +
   labs(
     x = NULL,
@@ -213,7 +214,7 @@ my_plot <-
       whitespace_only = FALSE
     ) |>
       glue::glue(
-        "<br><br><span style='font-size:12px'>Mass (grams)</span>"
+        "<br><br><span style='font-size:12px'>Mass (grams), each dot represents a meteorite.<br> The bigger the dot represent the mean mass of <br>the meteorite category</span>"
       ) |>
       str_replace_all("\n", "<br>"),
     caption = str_wrap(
