@@ -1,0 +1,232 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 27 - Uncertainty: Animation
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+```{r}
+raw_data <- tidytuesdayR::tt_load('2025-08-26')
+```
+
+
+### Preparing data for plot
+```{r}
+top_lyrical_topic <-
+  raw_data$billboard |>
+  separate_rows(lyrical_topic, sep = ";") |>
+  count(lyrical_topic) |>
+  filter(!is.na(lyrical_topic)) |>
+  slice_max(n, n = 10) |>
+  pull(lyrical_topic) |>
+  unique()
+
+data2plot <-
+  raw_data$billboard |>
+  mutate(year = year(date)) |>
+  select(lyrical_topic, year) |>
+  separate_rows(lyrical_topic, sep = ";") |>
+  filter(lyrical_topic %in% top_lyrical_topic)  |>
+  count(lyrical_topic, year) |>
+  complete(lyrical_topic, year, fill = list(n = 0)) |>
+  group_by(year) |>
+  arrange(n, lyrical_topic) |>
+  mutate(year_rank = row_number()) |>
+  ungroup() |>
+  mutate(year = as.integer(year))
+```
+
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+pacman::p_load(gganimate)
+# pac
+my_plot <-
+data2plot |>
+  ggplot(aes(
+      xmin = 0,
+      xmax = n,
+      y = year_rank,
+      ymin = year_rank - 0.45,
+      ymax = year_rank + 0.45,
+      fill = lyrical_topic
+    )) +
+  geom_rect(
+    show.legend = FALSE,
+    alpha = 0.3
+  ) +
+  geom_text(aes(label = lyrical_topic), hjust = 0, x = 0 + 0.2, size = 2.5) +
+  geom_text(
+    data = data2plot |> distinct(year),
+    aes(label = year |> floor() |> as.character()),
+    inherit.aes = FALSE,
+    y = 1,
+    x = max(data2plot$n),
+    hjust = 1,
+    size = 10
+  ) +
+  scale_x_continuous(limits = c(0, max(data2plot$n))) +
+  scale_fill_discrete(palette = c(colors_nizami, "#CCC")) +
+  theme(
+    axis.text.y = element_blank(),
+    axis.title.y = element_blank(),
+    panel.grid.major.x = element_line(color = 'grey80', linewidth = .3),
+    plot.title = element_markdown()
+  ) +
+  facet_wrap(~year) +
+  facet_null() +
+  transition_reveal(year) +
+  labs(
+    title = str_wrap(
+      glue::glue(
+        "**Top 10 most common lyrical topics** in Billboard Hot 100 from 1958 to 2025"
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      glue::glue(
+        "<br><br><span style='font-size:12px'># song with the lyrical topic</span>"
+      ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE tidytuesday NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>")
+  )
+
+my_animation <- animate(
+  my_plot,
+  duration = 200,
+  fps = 10,
+  width = 4,
+  height = 5.5,
+  start_pause = 10,
+  end_pause = 20,
+  units = "in",
+  res = 130
+)
+
+
+anim_save(
+  my_animation,
+  # width = 4,
+  # height = 5.5,
+  filename = "2026/images/day27.gif"
+)
+```
