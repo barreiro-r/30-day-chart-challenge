@@ -58,15 +58,18 @@
       const week = Math.floor(i / 6) + 1;
       const paddedDay = String(day).padStart(2, '0');
       
-      return {
-        id: day,
-        day: day,
-        week: week,
-        theme: themes[week - 1],
-        topic: topics[i],
-        githubUrl: `https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2026/scripts/day${paddedDay}.qmd`,
-        imageUrl: `https://raw.githubusercontent.com/barreiro-r/30-day-chart-challenge/main/2026/images/day${paddedDay}.png`
-      };
+     // Define the extension based on the day
+    const fileExtension = day === 27 ? 'gif' : 'png';
+    
+    return {
+      id: day,
+      day: day,
+      week: week,
+      theme: themes[week - 1],
+      topic: topics[i],
+      githubUrl: `https://github.com/barreiro-r/30-day-chart-challenge/blob/main/2026/scripts/day${paddedDay}.qmd`,
+      imageUrl: `https://raw.githubusercontent.com/barreiro-r/30-day-chart-challenge/main/2026/images/day${paddedDay}.${fileExtension}`
+    };
     });
 
     // State Management
