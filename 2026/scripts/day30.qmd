@@ -1,0 +1,224 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 30 - Uncertainty: Global Health Data Exchange
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+
+### Read raw data
+
+Original: https://data.unicef.org/resources/dataset/nutrition-school-children-adolescents/
+```{r}
+# Loading data
+raw_data <- read_csv('2026/datasets/IHME-GBD_2023_DATA-76fd65ac-1.csv') |>
+  janitor::clean_names()
+```
+
+
+### Preparing data for plot
+```{r}
+pacman::p_load(forecast)
+
+data2plot <- 
+  raw_data |>
+  filter(metric == "Number") |>
+  select(cause, year, val) |>
+  filter(cause == "Non-communicable diseases")
+
+my_fit <- 
+  auto.arima(ts(data2plot$val))
+
+last_historical_point <- data2plot |> slice_max(year) |>
+  transmute(point_forecast = val, year = year)
+
+forecast_data <- 
+  forecast(my_fit, h = 10, level = c(50, 80, 95)) |>
+  as_tibble() |>
+  janitor::clean_names() |>
+  mutate(year = max(data2plot$year) + row_number() - 1) |>
+  bind_rows(last_historical_point) |>
+  mutate(across(everything(), ~replace_na(.x, last_historical_point$point_forecast)))
+
+
+```
+
+
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+my_plot <- 
+  data2plot |>
+  ggplot(aes(x = year, y = val)) +
+  geom_line(color = colors_nizami["red"]) +
+  geom_ribbon(
+    data = forecast_data,
+    inherit.aes = FALSE,
+    aes(x = year, ymin = lo_50, ymax = hi_50),
+    alpha = 0.3,
+    fill = colors_nizami["red"]
+  ) +
+  geom_ribbon(
+    data = forecast_data,
+    inherit.aes = FALSE,
+    aes(x = year, ymin = lo_80, ymax = hi_80),
+    alpha = 0.3,
+    fill = colors_nizami["red"]
+  ) +
+  geom_ribbon(
+    data = forecast_data,
+    inherit.aes = FALSE,
+    aes(x = year, ymin = lo_95, ymax = hi_95),
+    alpha = 0.3,
+    fill = colors_nizami["red"]
+  )+
+  scale_y_continuous(expand = c(0, 0), label = function(x) {
+    str_c(x/1000000, "M")
+  })  +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = str_wrap(
+      glue::glue(
+        "**Deaths by non-communicable diseases forecast** in 10 years in Brazil."
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      glue::glue(
+        "<br><br><span style='font-size:12px'>Number of Deaths (50%/80%/95% CI)</span>"
+      ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE Global Health Data Exchange NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>")
+  ) +
+  theme(
+    axis.ticks.x = element_line(color = '#474747', linewidth = .3),
+    axis.ticks.length = unit(0.05, "cm"),
+    panel.grid.major.y = element_line(linewidth = .3, color = 'grey80')
+  )
+
+
+ggsave(
+  my_plot,
+  width = 4,
+  height = 5.5,
+  filename = "2026/images/day30.png"
+)
+```
