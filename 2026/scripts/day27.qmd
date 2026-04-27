@@ -212,7 +212,7 @@ data2plot |>
 
 my_animation <- animate(
   my_plot,
-  duration = 200,
+  duration = 179,
   fps = 10,
   width = 4,
   height = 5.5,
