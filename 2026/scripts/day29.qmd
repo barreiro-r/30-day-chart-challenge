@@ -1,0 +1,314 @@
+---
+title: "#30DayChartChallenge"
+format: html
+echo: false
+warning: false
+message: false
+output:
+    html_document:
+        fig_retina: 1
+---
+
+# 30 Day Chart Challenge 2026
+## Day 29 - Uncertainty: Monochrome
+
+### Load libraries & Set Themes
+```{r}
+#| label: Load libraries & Set Themes
+pacman::p_load(
+  tidyverse,
+  janitor,
+  ggrepel,
+  ggtext,
+  stringr,
+  scales,
+  MetBrewer,
+  lubridate,
+  ggh4x
+  # showtext
+)
+
+# showtext and ggtext::element_markdown 
+# are not behaving properly together
+#
+# font_add_google(
+#   "Hanken Grotesk",
+#   "Hanken Grotesk",
+#   regular.wt = 400,
+#   bold.wt = 800
+# )
+# showtext_auto()
+# showtext_opts(dpi = 300)
+
+warm_white <- "#f0ebe3ff"
+warm_black <- "#38352fff"
+
+# MetBrewer::MetPalettes$Nizami
+colors_nizami <- c(
+  orange_light = "#dd7867",
+  red          = "#b83326", 
+  orange_dark  = "#c8570d",
+  yellow       = "#edb144",
+  teal         = "#8cc8bc",
+  teal_dark    = "#67a397",
+  blue_light   = "#7da7ea",
+  blue         = "#5773c0", 
+  blue_dark    = "#1d4497"
+)
+
+theme_set(
+  theme_minimal() +
+    theme(
+      # axis.line.x.bottom = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.x= element_line(color = '#474747', linewidth = .3),
+      # axis.line.y.left = element_line(color = '#474747', linewidth = .3),
+      # axis.ticks.y= element_line(color = '#474747', linewidth = .3),
+      # # panel.grid = element_line(linewidth = .3, color = 'grey90'),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.ticks.length = unit(-0.15, "cm"),
+      plot.background = element_rect(fill = warm_white),
+      plot.title.position = "plot",
+      plot.caption.position = "plot",
+      plot.title = element_markdown(
+        family = "Hanken Grotesk",
+        size = 12,
+        hjust = 0,
+        lineheight = 1.2,
+        margin = margin(0, 0, 15, 0),
+      ),
+      plot.caption = element_markdown(
+        family = "Hanken Grotesk",
+        size = 8,
+        color = 'grey60',
+        margin = margin(15, 0, 0, 0),
+        hjust = 0,
+        lineheight = 1.2
+      ),
+      plot.subtitle = element_markdown(
+        size = 9,
+        lineheight = 1.2,
+        margin = margin(5, 0, 0, 0),
+        hjust = 0.5
+      ),
+      axis.title.x = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.title.y = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40",
+        margin = margin(0, 0, 0, 0)
+      ),
+      axis.text = element_markdown(
+        family = "Hanken Grotesk",
+        hjust = 0.5,
+        size = 8,
+        color = "grey40"
+      ),
+      legend.position = "top",
+      text = element_text(family = "Hanken Grotesk", color = warm_black),
+      plot.margin = margin(25, 25, 25, 25)
+    )
+)
+```
+
+### Read raw data
+
+Original: https://data.unicef.org/resources/dataset/nutrition-school-children-adolescents/
+```{r}
+# Loading data
+pacman::p_load(readxl)
+
+header <-
+  read_excel(
+    "2026/datasets/UNICEF_Global-database_SACA_obesity_August-2025-V2.xlsx",
+    sheet = "5to9",
+    skip = 6,
+    range = "B7:EN9",
+    col_names = FALSE
+  ) |>
+  t() |>
+  as.tibble(stringsAsFactors = FALSE) |>
+  fill(V1, V2, .direction = "down") |>
+  transmute(
+    combined_name = paste(V1, V2, V3, sep = "-") |> str_remove_all("-NA")
+  ) |>
+  pull(combined_name)
+
+raw_data <-
+  read_excel(
+    "2026/datasets/UNICEF_Global-database_SACA_obesity_August-2025-V2.xlsx",
+    sheet = "5to9",
+    skip = 10,
+    col_names = FALSE
+  ) |>
+  set_names(header) |>
+  pivot_longer(
+    cols = starts_with('2'),
+    names_to = 'name',
+    values_to = 'value'
+  ) |>
+  mutate(name = str_remove(name, 'x')) |>
+  separate(
+    name,
+    into = c('year', 'sex', 'estimator'),
+    sep = '-',
+    convert = TRUE
+  ) |>
+  janitor::clean_names() |>
+  mutate(
+    estimator = snakecase::to_snake_case(estimator),
+    sex = snakecase::to_snake_case(sex)
+  ) 
+```
+
+
+### Preparing data for plot
+```{r}
+data2plot <-
+  raw_data |>
+  filter(estimator == 'point_estimate') |>
+  filter(sex %in% c('females', 'males')) |>
+  filter(world_bank_income_groups != "Not Classified") |>
+  mutate(
+    world_bank_income_groups = factor(
+      world_bank_income_groups,
+      levels = c(
+        "High Income",
+        "Upper Middle Income",
+        "Lower Middle Income",
+        "Low Income"
+      )
+    )
+  ) |>
+  group_by(world_bank_income_groups, year, sex, estimator) |>
+  summarise(value = mean(as.numeric(value), na.rm = TRUE), .groups = "drop") |>
+  group_by(world_bank_income_groups, year) |>
+  summarise(value = mean(value, na.rm = TRUE), .groups = "drop") |>
+  group_by(world_bank_income_groups) |>
+  filter(year %in% c(min(year), max(year))) |>
+  mutate(
+    world_bank_income_groups = factor(
+      world_bank_income_groups,
+      levels = c(
+        "Low Income",
+        "Lower Middle Income",
+        "Upper Middle Income",
+        "High Income"
+      )
+    )
+  )
+
+data2plot_delta <- 
+  data2plot |>
+    mutate(year = if_else(year == min(year), 'oldest', 'newest')) |>
+    pivot_wider(names_from = year, values_from = value) |>
+    mutate(delta = newest - oldest) |>
+    mutate(label = paste0("↑",round(delta, 1), "%")) |>
+    mutate(pos = oldest + (delta / 2))
+```
+
+
+### Time for plotting
+```{r fig.showtext=TRUE}
+legend_text <- 
+  data2plot |>
+  filter(world_bank_income_groups == levels(data2plot$world_bank_income_groups) |> head(1)) 
+
+my_plot <-
+  data2plot |>
+  ggplot(aes(x = world_bank_income_groups, y = value)) +
+  geom_col(
+    data = subset(data2plot, year == max(year)),
+    fill = warm_black,
+    position = 'identity',
+    width = 0.8
+  ) +
+  ggpattern::geom_col_pattern(
+    data = subset(data2plot, year == min(year)),
+    pattern_color = warm_white,
+    fill = NA,
+    width = 0.8,
+    pattern_spacing = 0.015,
+    pattern_size = 0.1,
+    pattern_angle = 45
+  ) +
+  geom_text(
+    data = data2plot_delta,
+    aes(x = world_bank_income_groups, y = pos, label = label),
+    inherit.aes = FALSE,
+    color = warm_white,
+    size = 3,
+    family = "Hanken Grotesk",
+  ) +
+  geom_text(
+    data = legend_text |> filter(year == max(year)),
+    aes(x = world_bank_income_groups, y = value, label = year),
+    inherit.aes = FALSE,
+    color = warm_black,
+    size = 2.5,
+    family = "Hanken Grotesk",
+    hjust = 1,
+    vjust = -0.3
+  ) +
+  geom_text(
+    data = legend_text |> filter(year == min(year)),
+    aes(x = world_bank_income_groups, y = value, label = year),
+    inherit.aes = FALSE,
+    color = warm_white,
+    size = 2.5,
+    family = "Hanken Grotesk",
+    hjust = 1,
+    vjust = -0.3
+  ) +
+  scale_y_continuous(expand = c(0, 0), label = function(x) {
+    str_c(x, "%")
+  }) +
+  scale_x_discrete(
+    labels = function(x) {
+      x |>
+        str_remove(" Income") |>
+        str_to_title() |>
+        str_replace(" ", "\n")
+    }
+  ) +
+  labs(
+    x = NULL,
+    y = NULL,
+    title = str_wrap(
+      glue::glue(
+        "**Increasing childhood obesity** from {min(data2plot$year)} to {max(data2plot$year)} across income counties."
+      ),
+      width = 45,
+      whitespace_only = FALSE
+    ) |>
+      glue::glue(
+        "<br><br><span style='font-size:12px'>% of children with obesity"
+      ) |>
+      str_replace_all("\n", "<br>"),
+    caption = str_wrap(
+      width = 65,
+      'SOURCE unicef NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+    ) |>
+      str_replace_all("\n", "<br>")
+  ) +
+  theme(
+    axis.ticks.x = element_line(color = '#474747', linewidth = .3),
+    axis.ticks.length = unit(0.05, "cm"),
+    panel.grid.major.y = element_line(linewidth = .3, color = 'grey80')
+  )
+
+
+ggsave(
+  my_plot,
+  width = 4,
+  height = 5.5,
+  filename = "2026/images/day29.png"
+)
+```
