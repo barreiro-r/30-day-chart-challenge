@@ -10,7 +10,7 @@ output:
 ---
 
 # 30 Day Chart Challenge 2026
-## Day 28 - Uncertainty: m
+## Day 28 - Uncertainty: modeling
 
 ### Load libraries & Set Themes
 ```{r}
@@ -121,112 +121,70 @@ theme_set(
 
 ### Read raw data
 ```{r}
-raw_data <- tidytuesdayR::tt_load('2025-08-26')
+raw_data <- 
+  read_delim('2026/datasets/amazon.csv', delim = ',') |>
+  janitor::clean_names()
 ```
 
 
 ### Preparing data for plot
 ```{r}
-top_lyrical_topic <-
-  raw_data$billboard |>
-  separate_rows(lyrical_topic, sep = ";") |>
-  count(lyrical_topic) |>
-  filter(!is.na(lyrical_topic)) |>
-  slice_max(n, n = 10) |>
-  pull(lyrical_topic) |>
-  unique()
-
-data2plot <-
-  raw_data$billboard |>
-  mutate(year = year(date)) |>
-  select(lyrical_topic, year) |>
-  separate_rows(lyrical_topic, sep = ";") |>
-  filter(lyrical_topic %in% top_lyrical_topic)  |>
-  count(lyrical_topic, year) |>
-  complete(lyrical_topic, year, fill = list(n = 0)) |>
+data2plot <- 
+  raw_data |>
+  group_by(year, month) |>
+  summarise(number_of_fires = sum(number)) |>
+  filter(n() == 12) |>
   group_by(year) |>
-  arrange(n, lyrical_topic) |>
-  mutate(year_rank = row_number()) |>
-  ungroup() |>
-  mutate(year = as.integer(year))
+  summarise(number_of_fires = sum(number_of_fires)) |>
+  ungroup()
 ```
-
 
 ### Time for plotting
 ```{r fig.showtext=TRUE}
-pacman::p_load(gganimate)
-# pac
 my_plot <-
-data2plot |>
-  ggplot(aes(
-      xmin = 0,
-      xmax = n,
-      y = year_rank,
-      ymin = year_rank - 0.45,
-      ymax = year_rank + 0.45,
-      fill = lyrical_topic
-    )) +
-  geom_rect(
-    show.legend = FALSE,
-    alpha = 0.3
+  data2plot |>
+  ggplot(aes(x = year, y = number_of_fires)) +
+  geom_point(color = warm_black, size = 1) +
+  geom_smooth(
+    color = colors_nizami[["red"]],
+    fill = colors_nizami[["red"]],
+    alpha = 0.1,
+    method = 'lm'
   ) +
-  geom_text(aes(label = lyrical_topic), hjust = 0, x = 0 + 0.2, size = 2.5) +
-  geom_text(
-    data = data2plot |> distinct(year),
-    aes(label = year |> floor() |> as.character()),
-    inherit.aes = FALSE,
-    y = 1,
-    x = max(data2plot$n),
-    hjust = 1,
-    size = 10
+  scale_y_continuous(
+    labels = scales::label_number(scale = 1 / 1000, suffix = "K")
   ) +
-  scale_x_continuous(limits = c(0, max(data2plot$n))) +
-  scale_fill_discrete(palette = c(colors_nizami, "#CCC")) +
-  theme(
-    axis.text.y = element_blank(),
-    axis.title.y = element_blank(),
-    panel.grid.major.x = element_line(color = 'grey80', linewidth = .3),
-    plot.title = element_markdown()
-  ) +
-  facet_wrap(~year) +
-  facet_null() +
-  transition_reveal(year) +
   labs(
+    x = NULL,
+    y = NULL,
     title = str_wrap(
       glue::glue(
-        "**Top 10 most common lyrical topics** in Billboard Hot 100 from 1958 to 2025"
+        "**Increasing number of wildfires in Amazon Forest** from {min(data2plot$year)} to {max(data2plot$year)}"
       ),
       width = 45,
       whitespace_only = FALSE
     ) |>
       glue::glue(
-        "<br><br><span style='font-size:12px'># song with the lyrical topic</span>"
+        "<br><br><span style='font-size:12px'>Number of fires (thousands)</span>"
       ) |>
       str_replace_all("\n", "<br>"),
     caption = str_wrap(
       width = 65,
-      'SOURCE tidytuesday NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
+      'SOURCE kaggle NOTE This visualization is a conceptual exercise focused on design and layout; it is intended as a stylistic study rather than a comprehensive or final analysis. GITHUB barreiro-r'
     ) |>
       str_replace_all("\n", "<br>")
+  ) +
+  theme(
+    axis.ticks.x = element_line(color = '#474747', linewidth = .3),
+    axis.ticks.length = unit(0.05, "cm"),
+    panel.grid.major.y = element_line(linewidth = .3, color = 'grey80')
   )
 
-my_animation <- animate(
+
+ggsave(
   my_plot,
-  duration = 200,
-  fps = 10,
   width = 4,
   height = 5.5,
-  start_pause = 10,
-  end_pause = 20,
-  units = "in",
-  res = 130
-)
-
-
-anim_save(
-  my_animation,
-  # width = 4,
-  # height = 5.5,
-  filename = "2026/images/day27.gif"
+  filename = "2026/images/day28.png"
 )
 ```
